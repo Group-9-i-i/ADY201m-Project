@@ -4,7 +4,7 @@ import pandas as pd
 # Khởi tạo kết nối
 try:
     # Điền Project ID bạn đã tạo ở Bước 1 vào đây
-    ee.Initialize(project='uiia') 
+    ee.Initialize(project='gen-lang-client-0272496285') 
     print("Kết nối thành công!")
 except Exception as e:
     print("Lỗi kết nối: ", e)
