@@ -116,7 +116,6 @@ for i, row in df.iterrows():
 
     ndvi_values.append(ndvi)
     print(f"✔ {i+1}/{len(df)} NDVI = {ndvi}")
-    time.sleep(0.3)
 
 df["NDVI"] = ndvi_values
 
