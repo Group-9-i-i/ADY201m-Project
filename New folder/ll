@@ -1,0 +1,70 @@
+import requests
+import pandas as pd
+from geopy.geocoders import Nominatim
+import time
+
+# 1. Danh sách các huyện mẫu từ dữ liệu của bạn
+locations = ["Mangalore", "Udupi", "Mysore"] 
+df_locations = pd.DataFrame(locations, columns=['Location'])
+
+def get_lat_lon(location_name):
+    try:
+        geolocator = Nominatim(user_agent="agri_project_v1")
+        # Thêm 'Karnataka, India' để đảm bảo độ chính xác
+        full_address = f"{location_name}, Karnataka, India"
+        location = geolocator.geocode(full_address)
+        if location:
+            return location.latitude, location.longitude
+        return None, None
+    except:
+        return None, None
+
+# 3. Hàm lấy dữ liệu NPK & pH từ SoilGrids API
+def get_soil_data(lat, lon):
+    if lat is None or lon is None:
+        return None
+    
+    # Endpoint của SoilGrids REST API
+    # Các thuộc tính: nitrogen (N), phh2o (pH), soc (Carbon hữu cơ - liên quan đến P và K)
+    url = f"https://rest.isric.org/soilgrids/v2.0/properties/query?lat={lat}&lon={lon}&property=nitrogen&property=phh2o&property=soc&depth=0-5cm&value=mean"
+    
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        
+        # Trích xuất giá trị
+        properties = data['properties']['layers']
+        result = {}
+        for prop in properties:
+            name = prop['name']
+            value = prop['depths'][0]['values']['mean']
+            result[name] = value
+        return result
+    except Exception as e:
+        print(f"Error fetching SoilGrids: {e}")
+        return None
+
+# --- THỰC THI ---
+
+print("Đang lấy tọa độ...")
+df_locations[['lat', 'lon']] = df_locations['Location'].apply(lambda x: pd.Series(get_lat_lon(x)))
+
+print("Đang lấy dữ liệu đất từ SoilGrids (vui lòng đợi)...")
+soil_results = []
+for index, row in df_locations.iterrows():
+    # Delay nhẹ để tránh bị chặn API
+    time.sleep(1) 
+    res = get_soil_data(row['lat'], row['lon'])
+    soil_results.append(res)
+
+# Gộp kết quả vào DataFrame
+df_soil = pd.DataFrame(soil_results)
+df_final = pd.concat([df_locations, df_soil], axis=1)
+
+# Lưu ý: SoilGrids trả về đơn vị nhân với hệ số (ví dụ pH thường nhân 10)
+# Chúng ta cần chuẩn hóa lại
+if 'phh2o' in df_final.columns:
+    df_final['pH_normalized'] = df_final['phh2o'] / 10
+
+print("\nKết quả dữ liệu đất thu thập được:")
+print(df_final)
