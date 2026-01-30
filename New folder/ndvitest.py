@@ -6,6 +6,7 @@ from geopy.geocoders import Nominatim
 # =========================
 # 1. Khởi tạo Earth Engine
 # =========================
+# Đảm bảo Project ID của bạn chính xác
 ee.Initialize(project='gen-lang-client-0272496285')
 print("✅ Đã kết nối Google Earth Engine")
 
@@ -16,47 +17,55 @@ df = pd.read_csv("data_season.csv")
 df.columns = df.columns.str.strip()
 
 # =========================
-# 3. Geocode Location → lat/lon
+# 3. Geocode Location → lat/lon (Đã sửa lỗi)
 # =========================
-geolocator = Nominatim(user_agent="ndvi_project")
-
+geolocator = Nominatim(user_agent="ndvi_project_final")
 location_cache = {}
-lat_list = []
-lon_list = []
 
 unique_locations = df["Location"].dropna().unique()
 
 print("🌍 Đang geocode Location...")
 
 for loc in unique_locations:
+    # Mẹo: Sửa lỗi chính tả hoặc bổ sung thông tin vùng miền để tìm chính xác hơn
+    search_query = loc
+    if loc == "Chikmangaluru":
+        search_query = "Chikkamagaluru, Karnataka, India" # Tên chuẩn có 2 chữ 'k'
+    
     try:
-        geo = geolocator.geocode(loc)
+        # SỬA TẠI ĐÂY: Dùng search_query thay vì loc
+        geo = geolocator.geocode(search_query) 
         if geo:
             location_cache[loc] = (geo.latitude, geo.longitude)
             print(f"✔ {loc} → ({geo.latitude}, {geo.longitude})")
         else:
             location_cache[loc] = (None, None)
             print(f"❌ Không tìm thấy tọa độ cho {loc}")
-        time.sleep(1)  # tránh bị block
+        
+        time.sleep(1.2)  # Tránh bị server Nominatim chặn
     except Exception as e:
         print(f"⚠️ Lỗi geocode {loc}: {e}")
         location_cache[loc] = (None, None)
 
-df["lat"] = df["Location"].map(lambda x: location_cache[x][0])
-df["lon"] = df["Location"].map(lambda x: location_cache[x][1])
+# Ánh xạ tọa độ vào DataFrame
+df["lat"] = df["Location"].map(lambda x: location_cache.get(x, (None, None))[0])
+df["lon"] = df["Location"].map(lambda x: location_cache.get(x, (None, None))[1])
 
 # =========================
 # 4. Map Season → date
 # =========================
 def season_to_dates(year, season):
-    season = season.lower()
-    if season == "kharif":
-        return f"{year}-06-01", f"{year}-10-31"
-    elif season == "rabi":
-        return f"{year}-10-01", f"{year+1}-03-31"
-    elif season == "zaid":
-        return f"{year}-03-01", f"{year}-06-30"
-    else:
+    try:
+        year = int(year)
+        season = str(season).lower().strip()
+        if season == "kharif":
+            return f"{year}-06-01", f"{year}-10-31"
+        elif season == "rabi":
+            return f"{year}-10-01", f"{year+1}-03-31"
+        elif season == "zaid":
+            return f"{year}-03-01", f"{year}-06-30"
+        return None, None
+    except:
         return None, None
 
 # =========================
@@ -68,7 +77,6 @@ def get_ndvi(lat, lon, start_date, end_date):
             return None
 
         point = ee.Geometry.Point([lon, lat])
-
         collection = (
             ee.ImageCollection("MODIS/061/MOD13Q1")
             .filterBounds(point)
@@ -79,7 +87,6 @@ def get_ndvi(lat, lon, start_date, end_date):
             return None
 
         ndvi_img = collection.select("NDVI").mean()
-
         value = ndvi_img.reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=point,
@@ -87,18 +94,17 @@ def get_ndvi(lat, lon, start_date, end_date):
             maxPixels=1e9
         ).getInfo()
 
+        # MODIS NDVI cần nhân với hệ số quy đổi 0.0001
         return value["NDVI"] * 0.0001 if value and "NDVI" in value else None
 
     except Exception as e:
-        print("⚠️ Lỗi NDVI:", e)
         return None
 
 # =========================
 # 6. Tính NDVI cho từng dòng
 # =========================
 ndvi_values = []
-
-print("📡 Đang trích NDVI...")
+print("📡 Đang trích NDVI từ vệ tinh...")
 
 for i, row in df.iterrows():
     start_date, end_date = season_to_dates(row["Year"], row["Season"])
@@ -107,20 +113,17 @@ for i, row in df.iterrows():
         ndvi_values.append(None)
         continue
 
-    ndvi = get_ndvi(
-        lat=row["lat"],
-        lon=row["lon"],
-        start_date=start_date,
-        end_date=end_date
-    )
-
+    ndvi = get_ndvi(row["lat"], row["lon"], start_date, end_date)
     ndvi_values.append(ndvi)
-    print(f"✔ {i+1}/{len(df)} NDVI = {ndvi}")
+    
+    # In tiến độ để bạn theo dõi
+    status = "OK" if ndvi is not None else "FAIL"
+    print(f"✔ {i+1}/{len(df)} | {row['Location']} | {status}: {ndvi}")
 
 df["NDVI"] = ndvi_values
 
 # =========================
 # 7. Xuất CSV mới
 # =========================
-df.to_csv("data_season_with_ndvi.csv", index=False)
-print("🎉 Đã tạo file data_season_with_ndvi.csv")
+df.to_csv("data_season_with_ndvi_fixed.csv", index=False)
+print("\n🎉 Hoàn thành! File đã lưu: data_season_with_ndvi_fixed.csv")

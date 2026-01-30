@@ -1,63 +1,44 @@
-import ee
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 import pandas as pd
-from geopy.geocoders import Nominatim
 import time
 
-# 1. Khởi tạo
-ee.Initialize(project='gen-lang-client-0272496285')
-geolocator = Nominatim(user_agent="geo_debug_fix")
+# Khởi tạo trình duyệt
+driver = webdriver.Chrome()
+driver.get("https://soilhealth.dac.gov.in/nutrient-dashboard") # Ví dụ URL dashboard
 
-# 2. Đọc file
-df = pd.read_csv("data_season.csv")
-df.columns = df.columns.str.strip()
+time.sleep(5) # Đợi trang tải
 
-print("🚀 Bắt đầu Debug riêng cho Chikmangaluru...")
+try:
+    # 1. Tìm và chọn Bang (Karnataka)
+    state_dropdown = Select(driver.find_element(By.ID, "state_id_dropdown")) # ID này bạn phải F12 để tìm thực tế
+    state_dropdown.select_by_visible_text("Karnataka")
+    time.sleep(2)
 
-# 3. Hàm sửa lỗi tọa độ thủ công cho địa danh này
-def fix_chik_coords():
-    # Tên chuẩn để Geopy có thể tìm thấy
-    target_name = "Chikkamagaluru, Karnataka, India"
-    print(f"📡 Đang thử lấy tọa độ chuẩn cho: {target_name}")
+    # 2. Lặp qua từng Huyện (District)
+    district_dropdown = Select(driver.find_element(By.ID, "district_id_dropdown"))
     
-    try:
-        location = geolocator.geocode(target_name)
-        if location:
-            print(f"✅ Tìm thấy! Lat: {location.latitude}, Lon: {location.longitude}")
-            return location.latitude, location.longitude
-        else:
-            print("❌ Vẫn không tìm thấy tọa độ. Đang dùng tọa độ cứng (Fallback)...")
-            return 13.3153, 75.7754 # Tọa độ trung tâm Chikkamagaluru
-    except Exception as e:
-        print(f"⚠️ Lỗi kết nối Geopy: {e}")
-        return 13.3153, 75.7754
-
-# Lấy tọa độ một lần duy nhất để dùng cho tất cả dòng Chikmangaluru
-fix_lat, fix_lon = fix_chik_coords()
-
-# 4. Kiểm tra thử 1 dòng cụ thể của Chikmangaluru với GEE
-def test_gee_for_chik(lat, lon):
-    print(f"📡 Đang kiểm tra dữ liệu vệ tinh tại ({lat}, {lon}) cho năm 2004...")
-    try:
-        point = ee.Geometry.Point([lon, lat])
-        # Thử lấy dữ liệu mùa Zaid năm 2004 như trong ảnh của bạn
-        collection = (ee.ImageCollection("MODIS/061/MOD13Q1")
-                      .filterBounds(point)
-                      .filterDate('2004-03-01', '2004-06-30'))
+    for district in district_dropdown.options:
+        if district.text == "Select District": continue
         
-        count = collection.size().getInfo()
-        if count > 0:
-            ndvi_val = collection.select("NDVI").mean().reduceRegion(
-                reducer=ee.Reducer.mean(),
-                geometry=point,
-                scale=250
-            ).getInfo()
-            print(f"✅ Kết quả NDVI thu được: {ndvi_val['NDVI'] * 0.0001}")
-        else:
-            print("❌ Lỗi: Năm 2004 tại vị trí này không có dữ liệu vệ tinh MODIS.")
-    except Exception as e:
-        print(f"🚨 Lỗi GEE: {e}")
+        print(f"Đang cào dữ liệu huyện: {district.text}")
+        district.click()
+        time.sleep(3) # Đợi bảng dữ liệu hiện ra
+        
+        # 3. Lấy dữ liệu từ bảng (Table)
+        html = driver.page_source
+        # Dùng Pandas để đọc bảng HTML nhanh
+        dfs = pd.read_html(html)
+        
+        if dfs:
+            df_soil = dfs[0] # Lấy bảng đầu tiên tìm thấy
+            df_soil['District'] = district.text # Thêm cột tên huyện
+            # Lưu file CSV riêng từng huyện hoặc gộp lại
+            df_soil.to_csv(f"karnataka_{district.text}.csv", index=False)
 
-# Chạy test
-test_gee_for_chik(fix_lat, fix_lon)
+except Exception as e:
+    print(f"Lỗi: {e}")
 
-print("\n💡 LỜI KHUYÊN: Bạn nên dùng Notepad++ hoặc VS Code nhấn 'Replace All' đổi 'Chikmangaluru' thành 'Chikkamagaluru' trong file CSV trước khi chạy code chính.")
+finally:
+    driver.quit()
