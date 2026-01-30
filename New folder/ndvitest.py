@@ -115,10 +115,8 @@ for i, row in df.iterrows():
 
     ndvi = get_ndvi(row["lat"], row["lon"], start_date, end_date)
     ndvi_values.append(ndvi)
-    
-    # In tiến độ để bạn theo dõi
-    status = "OK" if ndvi is not None else "FAIL"
-    print(f"✔ {i+1}/{len(df)} | {row['Location']} | {status}: {ndvi}")
+    print(f"✔ {i+1}/{len(df)} NDVI = {ndvi}")
+    time.sleep(0.3)
 
 df["NDVI"] = ndvi_values
 
