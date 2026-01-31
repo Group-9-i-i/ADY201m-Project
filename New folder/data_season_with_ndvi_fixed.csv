@@ -1,4 +1,4 @@
-Year,Location,Area,Rainfall,Temperature,Soil type,Irrigation,yeilds,Humidity,Crops,price,Season,lat,lon,NDVI
+Year,District,Area,Rainfall,Temperature,Soil type,Irrigation,yeilds,Humidity,Crops,price,Season,lat,lon,NDVI
 2004,Mangalore,1279,2903.1,27.0,Alluvial,Drip,2570.0,57.0,Coconut,200000,Kharif,12.8698101,74.8430082,0.4820666666666667
 2004,Mangalore,13283,2903.1,27.0,Alluvial,Drip,27170.0,57.5,Coconut,4847,Kharif,12.8698101,74.8430082,0.4820666666666667
 2004,Mangalore,52119,2903.1,27.0,Alluvial,Drip,114744.0,57.0,Coconut,51239,Kharif,12.8698101,74.8430082,0.4820666666666667
