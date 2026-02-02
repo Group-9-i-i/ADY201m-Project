@@ -125,3 +125,4 @@ df_final.to_csv(output_name, index=False)
 print("-" * 40)
 print(f"🎉 HOÀN THÀNH! File đã tạo: {output_name}")
 print(df_final[['Location', 'Crops', 'N', 'P', 'K', 'pH']].head())
+ 
