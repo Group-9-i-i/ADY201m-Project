@@ -7,3 +7,4 @@ df = pd.read_csv('data_enriched_npk.csv')
 # Kiểm tra nhanh dữ liệu ban đầu
 print("Số dòng/cột ban đầu:", df.shape)
 print(df.info())
+
