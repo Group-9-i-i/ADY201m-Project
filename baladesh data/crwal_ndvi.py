@@ -3,67 +3,93 @@ import pandas as pd
 
 # 1. Khởi tạo kết nối
 try:
-    # Dùng Project ID của bạn
+    # Thay Project ID của bạn vào đây
     ee.Initialize(project='gen-lang-client-0272496285') 
     print("Kết nối GEE thành công!")
 except Exception as e:
-    print("Lỗi kết nối (hãy kiểm tra lại project ID hoặc chạy lệnh 'earthengine authenticate'): ", e)
+    print("Lỗi kết nối: ", e)
     exit()
 
-def get_bangladesh_ndvi_2022():
-    print("Đang tải bản đồ 64 huyện và tính toán NDVI... Vui lòng đợi.")
+def get_bangladesh_crop_seasons_2022():
+    print("Đang xử lý dữ liệu cho 3 mùa vụ (Boro, Aus, Aman)...")
 
-    # A. Lấy bản đồ hành chính 64 huyện của Bangladesh (Level 2)
-    # FAO GAUL là bộ dữ liệu chuẩn có sẵn trong Google Earth Engine
+    # A. Lấy bản đồ 64 huyện
     districts = ee.FeatureCollection("FAO/GAUL/2015/level2") \
         .filter(ee.Filter.eq('ADM0_NAME', 'Bangladesh'))
 
-    # B. Lấy dữ liệu vệ tinh MODIS cho năm 2022
-    # Bạn có thể sửa tháng ở dòng filterDate nếu muốn lấy theo mùa vụ (ví dụ: lúa Boro)
-    dataset = ee.ImageCollection("MODIS/061/MOD13Q1") \
-        .filterDate('2022-01-01', '2022-12-31') \
-        .select('NDVI')
+    # B. Định nghĩa 3 mùa vụ chính tại Bangladesh năm 2022
+    # Start/End: Thời gian cây phát triển mạnh nhất để lấy NDVI
+    # Harvest: Thời gian thu hoạch điển hình
+    seasons = [
+        {
+            'name': 'Boro', # Mùa quan trọng nhất, năng suất cao nhất
+            'start': '2022-01-15', 
+            'end': '2022-04-15', 
+            'harvest_window': 'April-May 2022'
+        },
+        {
+            'name': 'Aus', 
+            'start': '2022-05-01', 
+            'end': '2022-07-30', 
+            'harvest_window': 'July-August 2022'
+        },
+        {
+            'name': 'Aman', # Mùa lúa mùa mưa
+            'start': '2022-08-15', 
+            'end': '2022-11-15', 
+            'harvest_window': 'November-December 2022'
+        }
+    ]
 
-    # Tính ảnh trung bình của cả năm 2022 và nhân hệ số tỷ lệ 0.0001
-    mean_ndvi_image = dataset.mean().multiply(0.0001)
+    all_data = []
 
-    # C. Tính toán giá trị trung bình cho từng huyện (Reduce Regions)
-    # Hàm này sẽ chạy trên server Google, nhanh hơn vòng lặp for
-    district_ndvi = mean_ndvi_image.reduceRegions(
-        collection=districts,
-        reducer=ee.Reducer.mean(),
-        scale=250  # Độ phân giải của MODIS là 250m
-    )
-
-    # D. Chuyển dữ liệu từ Server GEE về máy (Client-side)
-    # Lưu ý: ADM2_NAME là tên Huyện trong dataset này
-    data = district_ndvi.select(['ADM2_NAME', 'mean']).getInfo()
-
-    # E. Xử lý dữ liệu thành DataFrame
-    results = []
-    for feature in data['features']:
-        properties = feature['properties']
-        district_name = properties.get('ADM2_NAME')
-        ndvi_value = properties.get('mean')
+    # C. Vòng lặp qua từng mùa để lấy dữ liệu
+    for season in seasons:
+        print(f" -> Đang tính toán mùa: {season['name']}...")
         
-        results.append({
-            'District_Name': district_name,
-            'NDVI_Average_2022': ndvi_value
-        })
+        # Lọc ảnh vệ tinh trong khoảng thời gian của mùa vụ đó
+        dataset = ee.ImageCollection("MODIS/061/MOD13Q1") \
+            .filterDate(season['start'], season['end']) \
+            .select('NDVI')
 
-    # F. Tạo bảng và lưu file CSV
-    df = pd.DataFrame(results)
-    
-    # Sắp xếp theo tên huyện cho đẹp
-    df = df.sort_values(by='District_Name')
-    
-    # Lưu file
-    output_filename = 'Bangladesh_NDVI_2022_64Districts.csv'
-    df.to_csv(output_filename, index=False)
-    
-    print(f"\nThành công! Đã lưu dữ liệu vào file: {output_filename}")
-    print(df.head()) # In thử 5 dòng đầu
+        # Lấy giá trị lớn nhất (max) của mùa vụ (thể hiện lúc cây xanh tốt nhất/sắp thu hoạch)
+        # Dùng .max() tốt hơn .mean() khi muốn dự đoán năng suất tối đa
+        ndvi_image = dataset.max().multiply(0.0001)
 
-# Chạy hàm
+        # Tính toán cho từng huyện
+        district_ndvi = ndvi_image.reduceRegions(
+            collection=districts,
+            reducer=ee.Reducer.mean(),
+            scale=250
+        )
+
+        # Lấy dữ liệu về
+        features = district_ndvi.select(['ADM2_NAME', 'mean']).getInfo()['features']
+
+        # Đưa vào danh sách kết quả
+        for ft in features:
+            props = ft['properties']
+            all_data.append({
+                'District_Name': props.get('ADM2_NAME'),
+                'Season': season['name'],
+                'NDVI_Value': props.get('mean'), # NDVI trung bình của huyện trong mùa đó
+                'Sowing_Date_Approx': season['start'], # Ngày gieo trồng ước tính
+                'Harvest_Window': season['harvest_window'], # Thời gian thu hoạch
+                'Year': 2022
+            })
+
+    # D. Xuất ra CSV
+    df = pd.DataFrame(all_data)
+    
+    # Sắp xếp để dễ nhìn: Theo Huyện rồi đến Mùa
+    df = df.sort_values(by=['District_Name', 'Sowing_Date_Approx'])
+    
+    filename = 'Bangladesh_NDVI_Seasons_2022.csv'
+    df.to_csv(filename, index=False)
+    
+    print(f"\nĐã xong! File lưu tại: {filename}")
+    print("Dữ liệu mẫu:")
+    print(df.head())
+
 if __name__ == "__main__":
-    get_bangladesh_ndvi_2022()
+    get_bangladesh_crop_seasons_2022()
