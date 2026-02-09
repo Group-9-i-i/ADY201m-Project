@@ -1,0 +1,20 @@
+2026-02-08 21:35:04,681 [INFO] Khởi động script với cấu hình tối ưu
+2026-02-08 21:35:04,681 [INFO] Max workers: 4, Batch size: 5
+2026-02-08 21:35:07,347 [INFO] ✓ Earth Engine khởi tạo thành công
+2026-02-08 21:35:07,976 [INFO] Tải 64 huyện thành công
+2026-02-08 21:35:07,978 [INFO] Chuẩn bị geometry cho tất cả huyện...
+2026-02-08 21:35:07,985 [INFO] Đã chuẩn bị 64 huyện
+2026-02-08 21:35:07,987 [INFO] Bắt đầu xử lý huyện: Barisal
+2026-02-08 21:35:07,993 [INFO] Bắt đầu xử lý huyện: Bhola
+2026-02-08 21:35:07,998 [INFO] Bắt đầu xử lý huyện: Jhalokati
+2026-02-08 21:35:08,005 [INFO] Bắt đầu xử lý huyện: Patuakhali
+2026-02-08 21:36:31,993 [INFO] Hoàn thành huyện: Jhalokati
+2026-02-08 21:36:31,996 [INFO] Bắt đầu xử lý huyện: Pirojpur
+2026-02-08 21:36:39,003 [INFO] Hoàn thành huyện: Barisal
+2026-02-08 21:36:39,003 [INFO] Bắt đầu xử lý huyện: Bandarban
+2026-02-08 21:36:43,945 [INFO] Hoàn thành huyện: Bhola
+2026-02-08 21:36:43,946 [INFO] Bắt đầu xử lý huyện: Brahamanbaria
+2026-02-08 21:38:02,696 [INFO] Hoàn thành huyện: Pirojpur
+2026-02-08 21:38:02,697 [INFO] Bắt đầu xử lý huyện: Chandpur
+2026-02-08 21:38:06,416 [INFO] Hoàn thành huyện: Bandarban
+2026-02-08 21:38:06,416 [INFO] Bắt đầu xử lý huyện: Chittagong
