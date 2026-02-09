@@ -1,97 +1,98 @@
 import ee
+import time
 
-# --- BƯỚC 1: KHỞI TẠO ---
+# 1. Khởi tạo
 try:
     ee.Initialize(project='gen-lang-client-0272496285')
-    print("[OK] Kết nối GEE thành công.")
-except:
+    print("Đã kết nối thành công.")
+except Exception as e:
     ee.Authenticate()
     ee.Initialize(project='gen-lang-client-0272496285')
 
-# --- BƯỚC 2: CHUẨN BỊ DỮ LIỆU ---
-print("--- Đang thiết lập dữ liệu... ---")
+def export_bangladesh_salinity_split_tasks():
+    print("Đang chuẩn bị gửi 12 Tasks riêng biệt (mỗi tháng 1 file)...")
 
-bangladesh_districts = ee.FeatureCollection("FAO/GAUL/2015/level2") \
-    .filter(ee.Filter.eq('ADM0_NAME', 'Bangladesh'))
+    # 2. Lấy ranh giới hành chính
+    bangladesh_districts = ee.FeatureCollection("FAO/GAUL/2015/level2") \
+        .filter(ee.Filter.eq('ADM0_NAME', 'Bangladesh'))
 
-# ĐỊNH NGHĨA CÁC BỘ DỮ LIỆU
-col_evi = ee.ImageCollection("MODIS/061/MOD13Q1").select(['EVI'])
-col_lai_fpar = ee.ImageCollection("MODIS/061/MOD15A2H").select(['Lai_500m', 'Fpar_500m'])
-col_lst = ee.ImageCollection("MODIS/061/MOD11A2").select(['LST_Day_1km'])
-col_soil = ee.ImageCollection("NASA_USDA/HSL/SMAP10KM_soil_moisture").select(['ssm'])
-
-# --- BƯỚC 3: HÀM XỬ LÝ AN TOÀN ---
-def process_safe_month(month_offset):
-    start_date = ee.Date('2022-01-01').advance(month_offset, 'month')
-    end_date = start_date.advance(1, 'month')
-    
-    # Hàm con: Lấy dữ liệu an toàn
-    def get_safe_band(collection, band_name, scale, new_name):
-        # Select đúng 1 band
-        filtered = collection.select(band_name).filterDate(start_date, end_date)
+    # 3. Hàm lọc mây (Masking) - ĐÃ SỬA
+    # Dùng band SCL (Scene Classification Layer) thay vì QA60 để tránh lỗi thiếu band
+    def maskS2clouds(image):
+        scl = image.select('SCL')
+        # SCL Classes:
+        # 3: Cloud Shadows (Bóng mây)
+        # 8: Cloud Medium Probability (Mây vừa)
+        # 9: Cloud High Probability (Mây dày)
+        # 10: Cirrus (Mây ti)
+        # 11: Snow/Ice (Tuyết)
         
-        # Kiểm tra nếu có ảnh thì lấy Mean, không thì trả về -9999
-        img = ee.Algorithms.If(
-            filtered.size().gt(0),
-            filtered.mean().multiply(scale).rename(new_name), 
-            ee.Image.constant(-9999).rename(new_name)
+        # Giữ lại những pixel KHÔNG phải là các loại trên
+        mask = scl.neq(3).And(scl.neq(8)).And(scl.neq(9)).And(scl.neq(10)).And(scl.neq(11))
+        return image.updateMask(mask)
+
+    # 4. Vòng lặp Python (Client-side)
+    for month in range(1, 13):
+        print(f" -> Đang thiết lập Task cho tháng {month}/2022...")
+
+        # Tạo ngày
+        start_date = ee.Date.fromYMD(2022, month, 1)
+        end_date = start_date.advance(1, 'month')
+
+        # Lấy ảnh và xử lý
+        s2 = ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED") \
+            .filterBounds(bangladesh_districts) \
+            .filterDate(start_date, end_date) \
+            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 80)) \
+            .map(maskS2clouds) \
+            .select(['B2', 'B4']) # Chọn band sau khi đã mask
+
+        # Tính chỉ số độ mặn (NDSI hoặc Salinity Index tùy công thức của bạn)
+        def add_si(img):
+            si = img.expression(
+                'sqrt(b("B2") * b("B4"))',
+                {'B2': img.select('B2'), 'B4': img.select('B4')}
+            ).rename('Salinity_Index_Raw')
+            return img.addBands(si)
+
+        # Tính trung bình tháng
+        monthly_mean = s2.map(add_si).select('Salinity_Index_Raw').mean()
+
+        # Reduce Regions
+        stats = monthly_mean.reduceRegions(
+            collection=bangladesh_districts,
+            reducer=ee.Reducer.mean(),
+            scale=100,      
+            tileScale=16    
         )
-        return ee.Image(img)
 
-    # Lấy từng chỉ số
-    img_evi = get_safe_band(col_evi, 'EVI', 0.0001, 'EVI')
-    img_lai = get_safe_band(col_lai_fpar, 'Lai_500m', 0.1, 'LAI')
-    img_fpar = get_safe_band(col_lai_fpar, 'Fpar_500m', 0.1, 'FPAR')
-    img_lst = get_safe_band(col_lst, 'LST_Day_1km', 0.02, 'LST_Kelvin')
-    img_sm = get_safe_band(col_soil, 'ssm', 1.0, 'Soil_Moisture_mm')
+        # Gán nhãn thời gian
+        stats_with_date = stats.map(lambda f: f.set({
+            'Month': month,
+            'Year': 2022,
+            'Salinity_Index_Raw': ee.Algorithms.If(f.get('mean'), f.get('mean'), -9999)
+        }))
 
-    # Ghép lại thành 1 ảnh
-    final_image = img_evi.addBands([img_lai, img_fpar, img_lst, img_sm])
-    
-    # Gán thời gian
-    final_image = final_image.set({
-        'month': start_date.get('month'),
-        'year': start_date.get('year')
-    })
+        # Cột cần xuất
+        export_columns = ['ADM2_NAME', 'ADM1_NAME', 'Month', 'Year', 'Salinity_Index_Raw']
 
-    # Tính toán thống kê
-    stats = final_image.reduceRegions(
-        collection=bangladesh_districts,
-        reducer=ee.Reducer.mean(),
-        scale=500 
-    )
-    
-    # Thêm cột thời gian
-    return stats.map(lambda f: f.set({
-        'Month': start_date.get('month'),
-        'Year': start_date.get('year')
-    }))
+        # Tạo Task
+        task_name = f'Bangladesh_Salinity_2022_Month_{month:02d}'
+        task = ee.batch.Export.table.toDrive(
+            collection=stats_with_date,
+            description=task_name,
+            folder='GEE_Exports_Split',
+            fileNamePrefix=task_name,
+            fileFormat='CSV',
+            selectors=export_columns
+        )
 
-# --- BƯỚC 4: GỬI LỆNH EXPORT (ĐÃ SỬA LỖI COLLECTION OF COLLECTIONS) ---
-print("--- Đang xử lý và gửi Task... ---")
+        # Gửi lệnh
+        task.start()
+        print(f"    [OK] Đã gửi Task ID: {task.id}")
 
-months = ee.List.sequence(0, 11)
+    print("\n------------------------------------------------")
+    print("Đã gửi xong 12 lệnh! Hãy kiểm tra Google Drive sau ít phút.")
 
-# 1. Map qua danh sách tháng -> Tạo ra một List chứa các FeatureCollection
-list_of_collections = months.map(process_safe_month)
-
-# 2. Biến List đó thành FeatureCollection -> Lúc này nó là "Collection of Collections" (lồng nhau)
-nested_collection = ee.FeatureCollection(list_of_collections)
-
-# 3. QUAN TRỌNG NHẤT: .flatten() để đập bẹp các collection con thành 1 bảng phẳng
-full_data = nested_collection.flatten()
-
-task = ee.batch.Export.table.toDrive(
-    collection=full_data,
-    description='Bangla_Env_Data_No_Errors', 
-    folder='GEE_Bangladesh_Data',
-    fileNamePrefix='Bangladesh_Env_Indicators_2022_Success',
-    fileFormat='CSV',
-    selectors=['ADM2_NAME', 'ADM2_CODE', 'Month', 'Year', 'EVI', 'LAI', 'FPAR', 'LST_Kelvin', 'Soil_Moisture_mm']
-)
-
-task.start()
-
-print(f"\n[THÀNH CÔNG] Đã gửi Task ID: {task.id}")
-print("Code này đã sửa lỗi 'Collection of Collections'. Chúc mừng bạn!")
-print("Link: https://code.earthengine.google.com/tasks")
+if __name__ == "__main__":
+    export_bangladesh_salinity_split_tasks()
