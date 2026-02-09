@@ -1,6 +1,9 @@
 import requests
 import pandas as pd
 from time import sleep
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 SOIL_LAYERS = {
     "phh2o": "pH",
     "soc": "Organic_Carbon",
@@ -11,25 +14,49 @@ SOIL_LAYERS = {
     "bdod": "Bulk_Density"
 }
 
-DEPTH = "0-30cm"
-def fetch_soilgrids(lat, lon):
-    url = "https://rest.isric.org/soilgrids/v2.0/properties/query"
+DEPTHS = ["0-5cm", "5-15cm", "15-30cm"]
+BASE_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
+
+
+def create_session():
+    session = requests.Session()
+    retry = Retry(
+        total=5,
+        backoff_factor=1.5,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"]
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
+
+
+def fetch_soilgrids(lat, lon, depth):
     params = {
         "lat": lat,
         "lon": lon,
-        "depth": DEPTH,
+        "depth": depth,
         "property": list(SOIL_LAYERS.keys())
     }
-    r = requests.get(url, params=params, timeout=30)
-    r.raise_for_status()
-    return r.json()["properties"]["layers"]
-def parse_soil(layers):
-    out = {}
+
+    try:
+        r = session.get(BASE_URL, params=params, timeout=40)
+        r.raise_for_status()
+        return r.json()["properties"]["layers"]
+    except Exception:
+        return None
+
+
+def parse_layers(layers):
+    values = {}
     for layer in layers:
         name = layer["name"]
-        value = layer["depths"][0]["values"]["mean"]
-        out[SOIL_LAYERS[name]] = value
-    return out
+        try:
+            values[name] = layer["depths"][0]["values"]["mean"]
+        except Exception:
+            values[name] = None
+    return values
+
+
 def collect_soil_data(district_csv):
     districts = pd.read_csv(district_csv)
     records = []
@@ -39,19 +66,40 @@ def collect_soil_data(district_csv):
         lat = row["Latitude"]
         lon = row["Longitude"]
 
-        print(f"🌍 Fetching soil for {name}")
-        try:
-            layers = fetch_soilgrids(lat, lon)
-            soil = parse_soil(layers)
-            soil["District"] = name
-            records.append(soil)
-        except Exception as e:
-            print(f"❌ Failed {name}: {e}")
+        print(f"🌍 {name}")
+        depth_values = {k: [] for k in SOIL_LAYERS}
 
-        sleep(1)
+        for depth in DEPTHS:
+            layers = fetch_soilgrids(lat, lon, depth)
+            if layers is None:
+                continue
+
+            parsed = parse_layers(layers)
+            for k, v in parsed.items():
+                if v is not None:
+                    depth_values[k].append(v)
+
+            sleep(1)
+
+        if all(len(v) == 0 for v in depth_values.values()):
+            print(f"❌ No soil data for {name}")
+            continue
+
+        soil = {}
+        for k, values in depth_values.items():
+            soil[SOIL_LAYERS[k]] = sum(values) / len(values) if values else None
+
+        soil["District"] = name
+        records.append(soil)
+        sleep(2)
 
     return pd.DataFrame(records)
+
+
+# ===== MAIN =====
+session = create_session()
+
 if __name__ == "__main__":
-    soil_df = collect_soil_data("bangladesh_district_coords.csv")
-    soil_df.to_csv("bangladesh_soil_features.csv", index=False)
-    print("✅ Saved bangladesh_soil_features.csv")
+    df = collect_soil_data("bangladesh_district_coords.csv")
+    df.to_csv("bangladesh_soil_features_0_30cm.csv", index=False)
+    print("✅ Saved bangladesh_soil_features_0_30cm.csv")
