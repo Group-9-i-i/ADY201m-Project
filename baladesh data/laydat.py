@@ -3,185 +3,189 @@ import pandas as pd
 from time import sleep
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import numpy as np
+import math
 
+# ===== CẤU HÌNH =====
 SOIL_LAYERS = {
-    "phh2o": "pH",
-    "soc": "Organic_Carbon",
-    "nitrogen": "Nitrogen",
-    "clay": "Clay",
-    "sand": "Sand",
-    "silt": "Silt",
-    "bdod": "Bulk_Density"
+    "phh2o": "pH", "soc": "Organic_Carbon", "nitrogen": "Nitrogen",
+    "clay": "Clay", "sand": "Sand", "silt": "Silt", "bdod": "Bulk_Density"
 }
 
-# SoilGrids trả về số nguyên đã nhân lên (VD: pH 55 nghĩa là 5.5). 
-# Cần chia lại để ra số thực tế.
 CONVERSION_FACTORS = {
-    "phh2o": 10,
-    "soc": 10,
-    "nitrogen": 100,
-    "clay": 10,
-    "sand": 10,
-    "silt": 10,
-    "bdod": 100
+    "phh2o": 10, "soc": 10, "nitrogen": 100, 
+    "clay": 10, "sand": 10, "silt": 10, "bdod": 100
 }
 
 DEPTHS = ["0-5cm", "5-15cm", "15-30cm"]
 BASE_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
 
+# ===== KẾT NỐI =====
 def create_session():
     session = requests.Session()
-    retry = Retry(
-        total=5,
-        backoff_factor=1, # Giảm backoff để nhanh hơn chút
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["GET"]
-    )
+    retry = Retry(total=5, backoff_factor=0.5, status_forcelist=[429, 500, 502, 503, 504])
     session.mount("https://", HTTPAdapter(max_retries=retry))
     return session
 
 session = create_session()
 
-def fetch_soilgrids_single_point(lat, lon, depth):
-    """Hàm gọi API cho 1 điểm duy nhất"""
-    params = {
-        "lat": lat,
-        "lon": lon,
-        "depth": depth,
-        "property": list(SOIL_LAYERS.keys()),
-        "value": "mean"
-    }
-    
+# ===== HÀM CỐT LÕI (MICRO-LEVEL) =====
+def fetch_exact_point(lat, lon):
+    """Thử lấy dữ liệu tại đúng 1 tọa độ"""
+    # 1. Ping nhanh lớp mặt 0-5cm để xem có đất không
     try:
-        r = session.get(BASE_URL, params=params, timeout=10)
-        # Nếu gặp lỗi 400 (Bad Request) thường là do tọa độ ngoài vùng phủ
-        if r.status_code == 400:
-            return None
-        r.raise_for_status()
+        check_params = {"lat": lat, "lon": lon, "depth": "0-5cm", "property": ["phh2o"], "value": "mean"}
+        r = session.get(BASE_URL, params=check_params, timeout=3)
+        if r.status_code == 400: return None
         data = r.json()
-        
-        # Kiểm tra xem API có trả về layers không
-        if "properties" not in data or "layers" not in data["properties"]:
-            return None
-            
-        return data["properties"]["layers"]
-    except Exception as e:
-        # print(f"Error fetching {lat}, {lon}: {e}")
+        # Nếu giá trị pH là None -> Đây là nước hoặc bê tông
+        if not data.get("properties", {}).get("layers", [])[0]["depths"][0]["values"]["mean"]:
+            return None 
+    except:
         return None
 
-def parse_layers(layers):
-    values = {}
-    is_valid_data = False # Cờ kiểm tra xem có ít nhất 1 giá trị khác None không
-    
-    for layer in layers:
-        name = layer["name"]
+    # 2. Nếu có đất, lấy full dữ liệu 3 độ sâu
+    point_record = {k: [] for k in SOIL_LAYERS}
+    for depth in DEPTHS:
+        params = {
+            "lat": lat, "lon": lon, "depth": depth, 
+            "property": list(SOIL_LAYERS.keys()), "value": "mean"
+        }
         try:
-            val = layer["depths"][0]["values"]["mean"]
-            if val is not None:
-                # Áp dụng hệ số chuyển đổi ngay tại đây
-                factor = CONVERSION_FACTORS.get(name, 1)
-                values[name] = val / factor
-                is_valid_data = True
-            else:
-                values[name] = None
-        except Exception:
-            values[name] = None
+            r = session.get(BASE_URL, params=params, timeout=3)
+            layers = r.json()["properties"]["layers"]
+            for layer in layers:
+                name = layer["name"]
+                val = layer["depths"][0]["values"]["mean"]
+                if val is not None:
+                    factor = CONVERSION_FACTORS.get(name, 1)
+                    point_record[name].append(val / factor)
+        except:
+            continue
             
-    return values, is_valid_data
+    # Tính trung bình 3 lớp đất
+    final_values = {}
+    if not point_record["phh2o"]: return None # Check lại lần cuối
+    
+    for k, v_list in point_record.items():
+        final_values[k] = sum(v_list) / len(v_list) if v_list else None
+        
+    return final_values
 
-def fetch_with_jitter(lat, lon, name):
+def fetch_smart_point_with_rescue(target_lat, target_lon, point_name):
     """
-    Thử tọa độ gốc, nếu không có dữ liệu thì thử dịch chuyển xung quanh.
-    Khoảng cách dịch chuyển ~0.01 độ (tương đương ~1.1km)
+    Thử điểm mục tiêu. Nếu thất bại, kích hoạt chế độ 'Cứu hộ' (Jitter)
+    xung quanh 1-2km.
     """
-    # Danh sách các độ lệch: (0,0) là gốc, sau đó là Đông, Tây, Nam, Bắc
-    offsets = [
-        (0, 0), 
-        (0.01, 0), (-0.01, 0), (0, 0.01), (0, -0.01),
-        (0.015, 0.015), (-0.015, -0.015) # Thử xa hơn chút nếu cần
+    # 1. Thử điểm chính
+    data = fetch_exact_point(target_lat, target_lon)
+    if data:
+        return data, False # False nghĩa là không cần cứu hộ
+
+    # 2. Kích hoạt cứu hộ (Micro-Jitter)
+    # Các độ lệch nhỏ: ~1km (0.01 độ) và ~2km (0.02 độ)
+    jitter_offsets = [
+        (0.01, 0), (-0.01, 0), (0, 0.01), (0, -0.01), # Cách 1km 4 hướng
+        (0.015, 0.015), (-0.015, -0.015),             # Cách 2km chéo
+        (0.02, 0), (-0.02, 0)                         # Cách 2km ngang
     ]
     
-    for i, (d_lat, d_lon) in enumerate(offsets):
-        test_lat = lat + d_lat
-        test_lon = lon + d_lon
-        
-        # Dictionary chứa dữ liệu của 3 độ sâu cho điểm này
-        point_data = {k: [] for k in SOIL_LAYERS}
-        valid_depth_count = 0
-        
-        # Duyệt qua từng độ sâu
-        for depth in DEPTHS:
-            layers = fetch_soilgrids_single_point(test_lat, test_lon, depth)
+    for d_lat, d_lon in jitter_offsets:
+        rescue_lat = target_lat + d_lat
+        rescue_lon = target_lon + d_lon
+        data = fetch_exact_point(rescue_lat, rescue_lon)
+        if data:
+            return data, True # True nghĩa là đã được cứu hộ thành công
             
-            if layers:
-                parsed_values, is_valid = parse_layers(layers)
-                if is_valid:
-                    for k, v in parsed_values.items():
-                        if v is not None:
-                            point_data[k].append(v)
-                    valid_depth_count += 1
-        
-        # Nếu lấy được dữ liệu của đủ 3 độ sâu (hoặc ít nhất 1), coi như thành công
-        if valid_depth_count > 0:
-            if i > 0:
-                print(f"   ⚠️ Đã tìm thấy dữ liệu thay thế tại offset {i} cho {name}")
-            return point_data
-            
-    return None # Thất bại hoàn toàn sau khi thử hết các điểm
+    return None, False # Thất bại hoàn toàn
 
+# ===== HÀM TỔNG HỢP (MACRO-LEVEL) =====
+def process_district(lat, lon, name):
+    """
+    Chiến thuật:
+    1. Tạo 5 điểm lớn (Tâm, Bắc, Nam, Đông, Tây - cách 11km).
+    2. Với mỗi điểm, nếu lỗi -> tự động tìm quanh đó 1-2km.
+    """
+    # Macro Grid: Các điểm vệ tinh cách tâm ~11km (0.1 độ)
+    grid_points = [
+        ("CENTER", 0, 0),
+        ("NORTH ", 0.1, 0),
+        ("SOUTH ", -0.1, 0),
+        ("EAST  ", 0, 0.1),
+        ("WEST  ", 0, -0.1)
+    ]
+    
+    collected_samples = []
+    log_str = ""
+    
+    for pt_name, d_lat, d_lon in grid_points:
+        target_lat = lat + d_lat
+        target_lon = lon + d_lon
+        
+        # Gọi hàm thông minh (có cứu hộ)
+        data, rescued = fetch_smart_point_with_rescue(target_lat, target_lon, pt_name)
+        
+        if data:
+            collected_samples.append(data)
+            if rescued:
+                log_str += "⚠️" # Dấu này nghĩa là điểm gốc lỗi, nhưng đã tìm được điểm thay thế gần đó
+            else:
+                log_str += "✅" # Dấu này nghĩa là điểm gốc ngon lành
+        else:
+            log_str += "❌" # Hết cứu
+
+    # Tổng hợp dữ liệu
+    if not collected_samples:
+        print(f"   [{log_str}] -> Thất bại")
+        return None
+
+    final_soil = {}
+    for k in SOIL_LAYERS:
+        values = [s[k] for s in collected_samples if s.get(k) is not None]
+        if values:
+            final_soil[SOIL_LAYERS[k]] = round(sum(values) / len(values), 2)
+        else:
+            final_soil[SOIL_LAYERS[k]] = None
+            
+    final_soil["valid_points"] = len(collected_samples)
+    final_soil["grid_log"] = log_str # Lưu lại log để bạn kiểm tra (VD: ✅⚠️✅❌✅)
+    
+    print(f"   [{log_str}] ({len(collected_samples)}/5 điểm)", end=" ", flush=True)
+    return final_soil
+
+# ===== MAIN =====
 def collect_soil_data(district_csv):
     districts = pd.read_csv(district_csv)
     records = []
-    
     total = len(districts)
-    print(f"🚀 Bắt đầu thu thập dữ liệu cho {total} quận...")
+    
+    print(f"🚀 Bắt đầu chế độ: Hybrid Search (Grid 11km + Jitter 1km)...")
+    print(f"📝 Chú thích: ✅=Gốc OK, ⚠️=Đã cứu hộ (lệch 1km), ❌=Bó tay")
 
     for idx, row in districts.iterrows():
-        name = row["District"]
-        lat = row["Latitude"]
-        lon = row["Longitude"]
+        name = row.get("District", row.get("district", "Unknown"))
+        lat = row["lat"]
+        lon = row["lon"]
 
-        print(f"[{idx+1}/{total}] 🌍 Đang xử lý: {name}...", end=" ", flush=True)
+        print(f"\n[{idx+1}/{total}] {name:<15}", end="", flush=True)
         
-        # Dùng hàm fetch_with_jitter thay vì gọi trực tiếp
-        depth_values = fetch_with_jitter(lat, lon, name)
+        soil_data = process_district(lat, lon, name)
 
-        if depth_values is None:
-            print(f"❌ THẤT BẠI (Vùng nước/Không dữ liệu)")
-            continue
-
-        # Tính trung bình các độ sâu
-        soil = {"District": name, "Latitude": lat, "Longitude": lon}
-        for k, values in depth_values.items():
-            if values:
-                soil[SOIL_LAYERS[k]] = round(sum(values) / len(values), 2)
-            else:
-                soil[SOIL_LAYERS[k]] = None
-        
-        records.append(soil)
-        print("✅ OK")
-        
-        # Sleep nhẹ để tránh rate limit
-        sleep(0.5)
+        if soil_data:
+            soil_data["District"] = name
+            soil_data["Latitude"] = lat
+            soil_data["Longitude"] = lon
+            records.append(soil_data)
+        else:
+            # Vẫn tạo dòng trống
+            empty = {k: None for k in SOIL_LAYERS.values()}
+            empty["District"] = name
+            empty["valid_points"] = 0
+            empty["grid_log"] = "❌❌❌❌❌"
+            records.append(empty)
 
     return pd.DataFrame(records)
 
-# ===== MAIN =====
 if __name__ == "__main__":
-    # Đảm bảo tên file input đúng
-    input_csv = "bangladesh_district_coords.csv" 
-    
-    try:
-        df = collect_soil_data(input_csv)
-        
-        if not df.empty:
-            output_file = "bangladesh_soil_features_final.csv"
-            df.to_csv(output_file, index=False)
-            print(f"\n🎉 Hoàn tất! Đã lấy được {len(df)}/{len(pd.read_csv(input_csv))} quận.")
-            print(f"📁 Dữ liệu đã lưu vào: {output_file}")
-        else:
-            print("\n⚠️ Không lấy được dòng dữ liệu nào.")
-            
-    except FileNotFoundError:
-        print(f"❌ Không tìm thấy file {input_csv}. Hãy kiểm tra lại tên file.")
+    df = collect_soil_data("bangladesh_64_districts_coords.csv")
+    df.to_csv("bangladesh_soil_final_hybrid.csv", index=False)
+    print("\n🎉 Hoàn tất! File: bangladesh_soil_final_hybrid.csv")
