@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 # đọc csv
-df = pd.read_csv("database_tong.csv", encoding="utf-8-sig")
+df = pd.read_csv("Agricultural_Data_Cleaned.csv", encoding="utf-8-sig")
 
 print(df.head())
 print(df.info())
