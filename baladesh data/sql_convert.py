@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 # đọc csv
-df = pd.read_csv("Agricultural_Data_Cleaned.csv", encoding="utf-8-sig")
+df = pd.read_csv("ket_qua_ghep.csv", encoding="utf-8-sig")
 
 print(df.head())
 print(df.info())
@@ -17,7 +17,7 @@ engine = create_engine(
 
 
 df.to_sql(
-    "datatong",
+    "data_sau_clean",
     engine,
     if_exists="replace",
     index=False,
