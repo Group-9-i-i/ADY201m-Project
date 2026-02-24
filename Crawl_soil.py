@@ -187,5 +187,5 @@ def collect_soil_data(district_csv):
 
 if __name__ == "__main__":
     df = collect_soil_data("bangladesh_districts_coords_data.csv")
-    df.to_csv("bangladesh_soil_final_hybrid.csv", index=False)
-    print("\n🎉 Hoàn tất! File: bangladesh_soil_final_hybrid.csv")
+    df.to_csv("Bangladesh_soil_data.csv", index=False)
+    print("\n🎉 Hoàn tất! File: Bangladesh_soil_data.csv")

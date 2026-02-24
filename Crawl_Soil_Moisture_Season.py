@@ -10,7 +10,7 @@ import os
 PROJECT_ID = 'gen-lang-client-0272496285'
 YEAR = 2022
 COUNTRY = 'Bangladesh'
-OUTPUT_FILE = 'Bangladesh_Soil_Moisture_2022_data.csv' # Đổi tên file để không lẫn với file lỗi cũ
+OUTPUT_FILE = 'Bangladesh_Soil_Moisture_data.csv' # Đổi tên file để không lẫn với file lỗi cũ
 
 try:
     ee.Initialize(project=PROJECT_ID)
