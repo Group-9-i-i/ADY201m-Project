@@ -1,143 +1,173 @@
 import pandas as pd
 import numpy as np
-from xgboost import XGBRegressor
-from sklearn.model_selection import KFold, ParameterSampler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import time
 from tqdm import tqdm
-import warnings
-warnings.filterwarnings('ignore')
+from scipy.stats import pearsonr
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.ensemble import StackingRegressor, RandomForestRegressor
+from sklearn.linear_model import Lasso, LinearRegression
 
-# 1. Đọc dữ liệu (Giữ nguyên gốc, KHÔNG DÙNG LOGARIT NỮA)
-X_train = pd.read_csv('X_train.csv')
-X_test = pd.read_csv('X_test.csv')
-y_train = pd.read_csv('y_train.csv').values.ravel()
-y_test = pd.read_csv('y_test.csv').values.ravel()
+# Import các mô hình cơ sở
+from xgboost import XGBRegressor
+from catboost import CatBoostRegressor
 
-# 2. Không gian siêu tham số Tối thượng (Dành cho reg:tweedie)
-param_grid = {
-    'n_estimators': [3000],                     # Vẫn để trần cao, Early Stopping sẽ tự cắt
-    'learning_rate': [0.01, 0.02, 0.05, 0.1],   # Học chậm lại để mô hình "ngấm" dữ liệu sâu hơn
-    'max_depth': [5, 7, 9, 11],                 # Mở rộng độ sâu cho phép
-    'min_child_weight': [1, 3, 5, 7],
-    'subsample': [0.7, 0.8, 0.9, 1.0],
-    'colsample_bytree': [0.6, 0.7, 0.8, 0.9],
-    'colsample_bynode': [0.6, 0.8, 1.0],        # ÉP MÔ HÌNH HỌC CÁC BIẾN MÔI TRƯỜNG, phá vỡ sự thống trị của One-Hot
-    'gamma': [0, 0.1, 0.3, 0.5],
-    'reg_alpha': [0, 0.5, 1, 5],                # L1
-    'reg_lambda': [1, 5, 10, 20],               # L2
-    'tweedie_variance_power': [1.2, 1.5, 1.8]   # [ĐẶC BIỆT] Hệ số điều chỉnh độ cong của phân phối Năng suất
-}
-
-# Tăng số vòng thử nghiệm lên 100 để xác suất quét trúng bộ tham số vàng cao hơn
-n_iter = 100
-param_list = list(ParameterSampler(param_grid, n_iter=n_iter, random_state=42))
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
-
-best_score = -np.inf
-best_params = None
-best_trees = 0
-
-print("Đang huấn luyện (Objective: Tweedie Regression + Tối ưu hóa GPU RTX 4050)...")
-
-# 3. Tìm kiếm mô hình tối ưu
-for params in tqdm(param_list, desc="Tiến trình (100 Cấu hình)", unit=" Mô Hình"):
-    fold_scores = []
-    fold_best_iters = [] 
+def evaluate_model(name, model, X_train, y_train, X_test, y_test):
+    """Hàm đánh giá chi tiết cả trên Train và Test"""
+    y_train_pred = model.predict(X_train)
+    y_test_pred = model.predict(X_test)
     
-    for train_idx, val_idx in kf.split(X_train):
-        X_tr, X_va = X_train.iloc[train_idx], X_train.iloc[val_idx]
-        y_tr, y_va = y_train[train_idx], y_train[val_idx]
-        
-        # SỬ DỤNG TWEEDIE REGRESSION TRÊN GPU
-        model = XGBRegressor(
-            **params, 
-            random_state=42, 
-            n_jobs=-1,  
-            objective='reg:tweedie',  # ĐỔI TỪ SQUARED ERROR SANG TWEEDIE
-            tree_method='hist',
-            device='cuda',
-            max_bin=256,
-            early_stopping_rounds=50
+    train_r2 = r2_score(y_train, y_train_pred)
+    train_mse = mean_squared_error(y_train, y_train_pred)
+    
+    test_r2 = r2_score(y_test, y_test_pred)
+    test_mse = mean_squared_error(y_test, y_test_pred)
+    _, p_val = pearsonr(y_test, y_test_pred)
+    
+    print(f"\n[{name.upper()}]")
+    print(f"  + TRAIN | R²: {train_r2:7.4f} | MSE: {train_mse:8.4f}")
+    print(f"  + TEST  | R²: {test_r2:7.4f} | MSE: {test_mse:8.4f}")
+    print(f"  + P-value (Test): {p_val:.5e}")
+    return test_r2
+
+def main():
+    # =========================================================================
+    # 1. TẢI DỮ LIỆU
+    # =========================================================================
+    print("1. Đang tải dữ liệu...")
+    try:
+        X_train = pd.read_csv('X_train.csv')
+        y_train = pd.read_csv('y_train.csv').values.ravel()
+        X_test = pd.read_csv('X_test.csv')
+        y_test = pd.read_csv('y_test.csv').values.ravel()
+    except FileNotFoundError as e:
+        print(f"Lỗi: Không tìm thấy file dữ liệu. {e}")
+        return
+
+    # =========================================================================
+    # 2. TARGET ENCODING
+    # =========================================================================
+    print("2. Đang áp dụng Target Encoding...")
+    ohe_prefixes = ['District_'] 
+    
+    for prefix in ohe_prefixes:
+        cols = [c for c in X_train.columns if c.startswith(prefix)]
+        if len(cols) > 0:
+            global_mean = y_train.mean()
+            target_means = {}
+            
+            for col in cols:
+                idx = X_train[X_train[col] == 1].index
+                if len(idx) > 0:
+                    target_means[col] = y_train[idx].mean()
+                else:
+                    target_means[col] = global_mean
+                    
+            new_col_name = f"{prefix}Target_Encoded"
+            X_train[new_col_name] = global_mean
+            X_test[new_col_name] = global_mean
+            
+            for col in cols:
+                X_train.loc[X_train[col] == 1, new_col_name] = target_means[col]
+                X_test.loc[X_test[col] == 1, new_col_name] = target_means.get(col, global_mean)
+                
+            X_train = X_train.drop(columns=cols)
+            X_test = X_test.drop(columns=cols)
+
+    # =========================================================================
+    # 3. CHUẨN HÓA DỮ LIỆU
+    # =========================================================================
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    # =========================================================================
+    # 4. TÌM KIẾM THAM SỐ (KỶ LUẬT SẮT - EXTREME REGULARIZATION)
+    # =========================================================================
+    model_grids = {
+        "Lasso": {
+            "model": Lasso(random_state=42),
+            "params": {'alpha': [1.0, 5.0, 10.0]} # Lọc biến nhiễu cực mạnh
+        },
+        "RandomForest": {
+            "model": RandomForestRegressor(random_state=42, max_features='sqrt'),
+            "params": {
+                'n_estimators': [100, 150],
+                'max_depth': [2, 3, 4],            # Rất lùn
+                'min_samples_leaf': [15, 20, 30]   # Lá khổng lồ
+            }
+        },
+        "XGBoost": {
+            "model": XGBRegressor(objective='reg:squarederror', random_state=42),
+            "params": {
+                'n_estimators': [100, 150],
+                'max_depth': [1, 2, 3],            # Cây chỉ 1-2 tầng
+                'learning_rate': [0.01, 0.03],
+                'subsample': [0.5, 0.7],           # Chỉ dùng 50-70% dữ liệu
+                'colsample_bytree': [0.5, 0.7],
+                'reg_lambda': [50, 100, 200]       # Phạt L2 khổng lồ
+            }
+        },
+        "CatBoost": {
+            "model": CatBoostRegressor(verbose=0, random_state=42),
+            "params": {
+                'iterations': [100, 200],
+                'depth': [2, 3, 4],                # Rất lùn
+                'learning_rate': [0.01, 0.03],
+                'subsample': [0.5, 0.7],
+                'l2_leaf_reg': [50, 100, 200]      # Phạt L2 khổng lồ
+            }
+        }
+    }
+
+    print("\n3. Bắt đầu tìm kiếm tham số (Không gian tham số Kỷ Luật Sắt)...")
+    best_estimators = []
+    
+    for name in tqdm(model_grids.keys(), desc="Đang chạy"):
+        search = RandomizedSearchCV(
+            estimator=model_grids[name]["model"],
+            param_distributions=model_grids[name]["params"],
+            n_iter=10,       
+            scoring='neg_mean_squared_error',
+            cv=5,            
+            n_jobs=-1,
+            random_state=42
         )
         
-        model.fit(
-            X_tr, y_tr,
-            eval_set=[(X_va, y_va)],
-            verbose=False
-        )
+        search.fit(X_train_scaled, y_train)
+        best_model = search.best_estimator_
+        best_estimators.append((name, best_model))
         
-        preds = model.predict(X_va)
-        score = r2_score(y_va, preds)
-        
-        fold_scores.append(score)
-        fold_best_iters.append(model.best_iteration)
-        
-    avg_score = np.mean(fold_scores)
-    avg_best_iter = int(np.mean(fold_best_iters)) 
+        evaluate_model(name, best_model, X_train_scaled, y_train, X_test_scaled, y_test)
+
+    # =========================================================================
+    # 5. STACKING ENSEMBLE
+    # =========================================================================
+    print("\n4. Đang kết hợp Ensemble bằng Stacking...")
+    stacking_model = StackingRegressor(
+        estimators=best_estimators,
+        # Lasso(positive=True) ở tầng Meta giúp chặn bớt mô hình thừa và giữ tỷ lệ dương
+        final_estimator=Lasso(alpha=0.01, positive=True, random_state=42), 
+        cv=5,
+        n_jobs=-1
+    )
+    stacking_model.fit(X_train_scaled, y_train)
+
+    # =========================================================================
+    # 6. ĐÁNH GIÁ TỔNG THỂ
+    # =========================================================================
+    print("\n" + "="*70)
+    print("KẾT QUẢ CUỐI CÙNG CỦA MÔ HÌNH ENSEMBLE (STACKING)".center(70))
+    print("="*70)
     
-    if avg_score > best_score:
-        best_score = avg_score
-        best_params = params
-        best_trees = avg_best_iter 
+    evaluate_model("STACKING ENSEMBLE", stacking_model, X_train_scaled, y_train, X_test_scaled, y_test)
+    
+    weights = stacking_model.final_estimator_.coef_
+    print("\n[PHÂN TÍCH TRỌNG SỐ] Mức độ tin tưởng của 'Sếp' vào các mô hình:")
+    for name, weight in zip([name for name, _ in best_estimators], weights):
+        print(f" - {name:15}: {weight:.4f} ({weight*100:.1f}%)")
+    print("="*70)
 
-best_params['n_estimators'] = best_trees
-
-# 4. Huấn luyện lại mô hình cuối cùng trên toàn bộ tập dữ liệu
-print(f"\n[Hoàn tất] Cấu hình tốt nhất được chọn. Số cây (Trees) tối ưu: {best_trees}")
-print("Bắt đầu đào tạo siêu mô hình cuối cùng trên GPU...")
-
-final_model = XGBRegressor(
-    **best_params, 
-    random_state=42, 
-    n_jobs=-1, 
-    objective='reg:tweedie',
-    tree_method='hist',
-    device='cuda',
-    max_bin=256
-)
-
-final_model.fit(X_train, y_train, verbose=False)
-
-# 5. DỰ ĐOÁN TRỰC TIẾP (Không cần giải mã exmp1 nữa)
-y_pred_train = final_model.predict(X_train)
-y_pred_test = final_model.predict(X_test)
-
-def evaluate(y_true, y_pred):
-    mae = mean_absolute_error(y_true, y_pred)
-    mse = mean_squared_error(y_true, y_pred)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(y_true, y_pred)
-    return mae, mse, rmse, r2
-
-train_mae, train_mse, train_rmse, train_r2 = evaluate(y_train, y_pred_train)
-test_mae, test_mse, test_rmse, test_r2 = evaluate(y_test, y_pred_test)
-
-print("\n" + "="*60)
-print("KẾT QUẢ TÌM KIẾM SIÊU THAM SỐ (Tweedie Regression trên GPU)")
-print("="*60)
-for param, value in best_params.items():
-    print(f" ► {param}: {value}")
-
-print("\n" + "="*60)
-print("ĐÁNH GIÁ MÔ HÌNH TRÊN TẬP HUẤN LUYỆN (Train Set)")
-print("="*60)
-print(f" ► Mean Absolute Error (MAE) : {train_mae:.4f}")
-print(f" ► Root Mean Squared (RMSE)  : {train_rmse:.4f}")
-print(f" ► R-squared (R2 Score)      : {train_r2:.4f}")
-
-print("\n" + "="*60)
-print("ĐÁNH GIÁ MÔ HÌNH TRÊN TẬP KIỂM TRA (Test Set)")
-print("="*60)
-print(f" ► Mean Absolute Error (MAE) : {test_mae:.4f}")
-print(f" ► Root Mean Squared (RMSE)  : {test_rmse:.4f}")
-print(f" ► R-squared (R2 Score)      : {test_r2:.4f}")
-
-print("\n" + "="*60)
-print("TOP 15 MỐI LIÊN HỆ ĐẶC TRƯNG QUAN TRỌNG NHẤT")
-print("="*60)
-feature_importances = final_model.feature_importances_
-importance_df = pd.DataFrame({'Feature': X_train.columns, 'Importance_Score': feature_importances})
-importance_df = importance_df.sort_values(by='Importance_Score', ascending=False)
-
-for index, row in importance_df.head(15).iterrows():
-    print(f"{row['Feature']:<35} : {row['Importance_Score']:.5f}")
+if __name__ == "__main__":
+    main()
