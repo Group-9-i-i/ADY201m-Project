@@ -4545,7 +4545,7 @@ Area,AP Ratio,District,Season,Avg Temp,Avg Humidity,Crop Name,Transplant,Growth,
 121790,1.507652517,Thakurgaon,Rabi,17.75,55,Wheat,Dec,Jan  to  March,April,183617,20,15.5,50,60
 490,1,Bagerhat,Kharif 1,25,70,Wood Apple,May,June to August,August to September,490,30,20,60,80
 83,2.012048193,Bandarban,Kharif 1,25,70,Wood Apple,May,June to August,August to September,167,30,20,60,80
-80,0.9375,Barguna,,25,70,Wood Apple,May,June to August,August to September,75,30,20,60,80
+80,0.9375,Barguna,Kharif 1,25,70,Wood Apple,May,June to August,August to September,75,30,20,60,80
 563,0.9253996448,Barishal,Kharif 1,25,70,Wood Apple,May,June to August,August to September,521,30,20,60,80
 155,1.032258065,Bhola,Kharif 1,25,70,Wood Apple,May,June to August,August to September,160,30,20,60,80
 344,1.85755814,Bogura,Kharif 1,25,70,Wood Apple,May,June to August,August to September,639,30,20,60,80
