@@ -2,7 +2,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 # đọc csv
-df = pd.read_csv("Cleaning.csv", encoding="utf-8-sig")
+df = pd.read_csv("Agri_Data_Cleaned.csv", encoding="utf-8-sig")
+g
 
 
 print(df.head())
