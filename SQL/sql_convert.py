@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 
 # đọc csv
 df = pd.read_csv("Agri_Data_Cleaned.csv", encoding="utf-8-sig")
-g
+
 
 
 print(df.head())
@@ -19,7 +19,7 @@ engine = create_engine(
 
 
 df.to_sql(
-    "DATA 2",
+    "DATA",
     engine,
     if_exists="replace",
     index=False,
