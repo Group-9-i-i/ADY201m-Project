@@ -19,7 +19,7 @@ engine = create_engine(
 
 
 df.to_sql(
-    "DATA_2",
+    "DATA",
     engine,
     if_exists="replace",
     index=False,
