@@ -10,7 +10,7 @@ print(df.head())
 print(df.info())
 
 engine = create_engine(
-    "mssql+pyodbc://@LAPTOP-NVSURACC\\SQLEXPRESS/testdb"
+    "mssql+pyodbc://@DESKTOP-CEGNGEJ\\SQLEXPRESS/ADY201m"
     "?driver=ODBC+Driver+17+for+SQL+Server"
     "&trusted_connection=yes"
 )
