@@ -1,6 +1,6 @@
 ﻿----- 1.Xem data co ba nhieu ban ghi 
 SELECT COUNT(*) AS total_rows
-FROM Data;
+FROM Data; 
 --- Nhan xet : Co 4178 ban ghi sau khi clean , moi ban ghi tuong trung cho 1 ruong
 
 ----- 2.Xem cac loai cay trong bangladesh va so ban ghi cua chung 
@@ -20,6 +20,23 @@ FROM DATA
 GROUP BY Season;
 -----Mua rabi co so luong 1188 ban ghi so voi kharif2 va kharif1 la 1569 va 1421 hoi mat can bang nhe  
 
+------Lọc các điều kiện nhiệt độ và lượng mưa 
+SELECT Yield, [Crop Name]
+FROM DATA
+WHERE [Avg Temp] BETWEEN 20 AND 35
+  AND rainfall > 100
+
+------Lọc các điều kiện theo mùa 
+SELECT Yield,[Crop Name]
+FROM DATA
+WHERE season = 'Kharif 1'
+
+
+
+
+
+
+   
 ------Phan tich seson anh huong den yeild nhu nao 
 SELECT 
     Season,
@@ -184,3 +201,13 @@ ORDER BY [Crop Name];
 -----Kết quả cho thấy phần lớn cây trồng đạt năng suất cao nhất trong mùa Kharif 1 và Kharif 2, trong khi mùa Rabi thường có năng suất thấp hơn. 
 -------Một số cây như Jack Fruit, Ripe Papaya và Green Coconut có năng suất vượt trội trong Kharif 1, cho thấy đây là mùa thuận lợi nhất.
 ---------Điều này chứng tỏ Season là yếu tố quan trọng và cần được kết hợp với loại cây trồng trong mô hình dự đoán.
+
+SELECT District, season, AVG(Yield) AS avg_yield
+FROM DATA
+GROUP BY District, season
+
+SELECT
+    
+    Yield / rainfall AS yield_per_rain
+FROM DATA
+WHERE rainfall > 0
