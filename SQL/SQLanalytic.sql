@@ -11,7 +11,6 @@ Order by COUNT([Crop Name]) desc  ;
 -----Nhan xet chung ta thay du lieu kha can bang giua cac loai cay , nhung cay Arhar, Tobacco, cheena se co ban ghi thap hon so voi cac loai cay khac
 ---- goi y nen tang so luong ban ghi bang cac phuong phap tang cuong du lieu de model hoc tot hon
 
-
 ------ So luong ban ghi season
 SELECT 
     Season,
@@ -30,12 +29,6 @@ WHERE [Avg Temp] BETWEEN 20 AND 35
 SELECT Yield,[Crop Name]
 FROM DATA
 WHERE season = 'Kharif 1'
-
-
-
-
-
-
    
 ------Phan tich seson anh huong den yeild nhu nao 
 SELECT 
@@ -207,7 +200,13 @@ FROM DATA
 GROUP BY District, season
 
 SELECT
-    
     Yield / rainfall AS yield_per_rain
 FROM DATA
 WHERE rainfall > 0
+
+-------Yeild trung bình theo mùa
+SELECT 
+    Season,
+    AVG(Yield) AS avg_yield
+FROM Data
+GROUP BY Season;
