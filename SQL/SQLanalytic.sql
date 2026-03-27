@@ -85,7 +85,7 @@ SELECT
 FROM Data
 GROUP BY ROUND([Avg Temp],1)
 ORDER BY avg_temp;
----- Nhan xet : ở đây ta quan sát được nhiệt độ không ảnh hưởng nhiều đến năng xuất nhưng ta thấy từ 29 độ thấy năng xuất tăng khá cao 
+---- Nhan xet : ở đây ta quan sát được nhiệt độ không ảnh hưởng nhiềuđến năng xuất nhưng ta thấy từ 29 độ thấy năng xuất tăng khá cao 
 
 -----8. Xem quan he giua do am va nang xuat
 SELECT 
