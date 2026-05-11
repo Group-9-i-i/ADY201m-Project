@@ -1,6 +1,6 @@
 import pandas as pd
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
+from geopy.geocoders import Nominatim #thư viện lấy tọa độ của openstreetmap
+from geopy.extra.rate_limiter import RateLimiter #thư viện delay tốc độ quét tọa độ của openstreetmap
 
 # 1. Danh sách 64 quận chuẩn từ SQL của bạn
 raw_districts = """
@@ -21,8 +21,8 @@ Tangail, Thakurgaon
 DISTRICT_LIST = [d.strip() for d in raw_districts.replace("\n", "").split(",")]
 
 # 2. Cấu hình Geocoder
-geolocator = Nominatim(user_agent="bd_final_mapper", timeout=10)
-geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1.2)
+geolocator = Nominatim(user_agent="tim_toa _do_Bangladesh", timeout=10) # gửi request đến OpenstreetMap để lấy tọa độ
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=2) # điều tốc độ gửi request tránh bị đánh dấu IP spam
 
 def get_coordinates(district_name):
     # Xử lý các tên viết dính để Nominatim dễ tìm hơn
@@ -40,17 +40,17 @@ def get_coordinates(district_name):
     return None, None
 
 # 3. Chạy và tạo file kết quả
-print(f"Đang lấy tọa độ cho {len(DISTRICT_LIST)} quận...")
+print(f"Đang lấy tọa độ cho {len(DISTRICT_LIST)} quận.")
 
 data = []
 for dist in DISTRICT_LIST:
     lat, lon = get_coordinates(dist)
     data.append({"district": dist, "lat": lat, "lon": lon})
-    print(f"✅ {dist}: {lat}, {lon}")
+    print(f"{dist}: {lat}, {lon}")
 
 # 4. Lưu file 64 dòng duy nhất
 df_final = pd.DataFrame(data)
 df_final.to_csv("bangladesh_64_districts_coords.csv", index=False)
 
 print("\n--- HOÀN THÀNH ---")
-print(f"Đã lưu file 'bangladesh_64_districts_coords.csv' với {len(df_final)} dòng.")
+print('YASSSSSSS!')
