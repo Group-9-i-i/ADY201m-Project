@@ -1,30 +1,34 @@
-import ee
+import ee # Xử dụng API của google earth
 import time
 import pandas as pd
-import io
+import io # xử lý in / out của python
 
 # 1. Khởi tạo
+print('Hệ thống crawl EC bằng google map đang chạy...')
 try:
-    ee.Initialize(project='gen-lang-client-0272496285')
-    print("✅ Đã kết nối thành công.")
+    ee.Initialize(project='gen-lang-client-0272496285') 
+    print("Đã kết nối thành công.")
 except Exception as e:
     ee.Authenticate()
     ee.Initialize(project='gen-lang-client-0272496285')
-
+# hàm chia số lần gửi request lên google earth tránh bị limit
 def split_list(lst, n):
     k, m = divmod(len(lst), n)
-    return (lst[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
+    return (lst[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n)) # công thức chia số lần gửi đảm bảo mỗi lần lệch nhau ít nhất
 
 def run_bangladesh_super_split():
     # --- CẤU HÌNH ---
     FINAL_FILENAME = "Bangladesh_Salinity_Full_2022.csv"
-    NUM_SPLIT = 12  # Chia làm 12 phần (Mỗi phần chỉ khoảng 5 huyện -> Cực nhẹ)
+    NUM_SPLIT = 12  
     all_dataframes = [] 
     
-    print(">>> Đang tải danh sách ranh giới hành chính...")
-    base_fc = ee.FeatureCollection("FAO/GAUL/2015/level2") \
-        .filter(ee.Filter.eq('ADM0_NAME', 'Bangladesh'))
-    
+    print("Đang tải danh sách ranh giới hành chính...")
+    # truy cập database để lấy danh giới hành chính
+    base_fc = ee.FeatureCollection("FAO/GAUL/2015/level2").filter(ee.Filter.eq('ADM0_NAME', 'Bangladesh'))
+    test_data = base_fc.limit(5).getInfo()
+# In ra kết quả
+    import pprint
+    pprint.pprint(test_data)
     # Lấy danh sách tên huyện
     district_names = base_fc.aggregate_array('ADM2_NAME').getInfo()
     total_districts = len(district_names)

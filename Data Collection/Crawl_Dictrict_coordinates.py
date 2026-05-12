@@ -48,9 +48,9 @@ for dist in DISTRICT_LIST:
     data.append({"district": dist, "lat": lat, "lon": lon})
     print(f"{dist}: {lat}, {lon}")
 
-# 4. Lưu file 64 dòng duy nhất
+# 4. Lưu data về dạng file csv
 df_final = pd.DataFrame(data)
 df_final.to_csv("bangladesh_64_districts_coords.csv", index=False)
 
-print("\n--- HOÀN THÀNH ---")
+print("--- HOÀN THÀNH ---")
 print('YASSSSSSS!')
