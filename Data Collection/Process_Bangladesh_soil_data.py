@@ -69,7 +69,7 @@ def process_soil_data():
     
     soil_df.to_csv(output_filename, index=False, encoding='utf-8-sig')
     
-    print(f"\n✅ HOÀN TẤT! File '{output_filename}' đã được tạo thành công.")
+    print(f"\nHOÀN TẤT! File '{output_filename}' đã được tạo thành công.")
     print("Các biến mới được tạo bao gồm:")
     print(" - CN_Ratio")
     print(" - pH_Suitability")

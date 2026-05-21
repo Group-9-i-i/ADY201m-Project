@@ -66,7 +66,7 @@ def process_weather_data():
     output_filename = 'Bangladesh_weather_data_procces.csv'
     weather_df.to_csv(output_filename, index=False, encoding='utf-8-sig')
     
-    print(f"\n✅ HOÀN TẤT! Đã tạo ra file '{output_filename}' thành công.")
+    print(f"\nHOÀN TẤT! Đã tạo ra file '{output_filename}' thành công.")
     print("Các cột mới được thêm vào:")
     print(" - Temp_Range")
     print(" - Wind_Range")

@@ -14,7 +14,6 @@ def get_season(month):
         return None
 
 def fetch_nasa(lat, lon):
-    # Cập nhật: Thêm WS2M, WS2M_MAX, WS2M_MIN vào danh sách parameters
     url = (
         "https://power.larc.nasa.gov/api/temporal/daily/point"
         "?parameters=PRECTOTCORR,T2M,T2M_MAX,T2M_MIN,WS2M,WS2M_MAX,WS2M_MIN"
@@ -25,7 +24,7 @@ def fetch_nasa(lat, lon):
         "&end=20221231"
         "&format=JSON"
     )
-    r = requests.get(url, timeout=30)
+    r = requests.get(url, timeout=30) # lấy danh sách dạng json 
     r.raise_for_status()
     return r.json()["properties"]["parameter"]
 
@@ -78,18 +77,18 @@ for _, row in coords.iterrows():
     lat = row["lat"]
     lon = row["lon"]
 
-    print(f"☁️ Fetching weather for {name}")
+    print(f"Fetching weather for {name}")
     try:
         raw = fetch_nasa(lat, lon)
         daily = nasa_to_df(raw)
         seasonal = aggregate_season(daily, name)
         all_data.append(seasonal)
     except Exception as e:
-        print(f"❌ Failed {name}: {e}")
+        print(f"Failed {name}: {e}")
 
     sleep(1)
 
 final_df = pd.concat(all_data, ignore_index=True)
 final_df.to_csv("bangladesh_weather_data.csv", index=False)
 
-print("✅ DONE")
+print("DONE")

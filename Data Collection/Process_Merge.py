@@ -133,7 +133,7 @@ def merge_dataframes():
     sm_merged.to_csv('Process_Bangladesh_Soil_Moisture_data_Merge.csv', index=False, encoding='utf-8-sig')
     print(" -> Đã tạo Process_Bangladesh_Soil_Moisture_data_Merge.csv")
 
-    print("\n✅ HOÀN TẤT! Jhallokati đã được điền đủ tọa độ. 3 file đã được lưu thành công.")
+    print("\nHOÀN TẤT! Jhallokati đã được điền đủ tọa độ. 3 file đã được lưu thành công.")
 
 if __name__ == "__main__":
     merge_dataframes()
