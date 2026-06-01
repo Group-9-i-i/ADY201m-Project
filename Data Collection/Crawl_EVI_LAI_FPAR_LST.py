@@ -15,7 +15,7 @@ bangladesh_districts = ee.FeatureCollection("FAO/GAUL/2015/level2").filter(
 )
 
 col_evi = ee.ImageCollection("MODIS/061/MOD13Q1").select(["EVI"]) # chỉ số thực vật tăng cường 
-col_lai_fpar = ee.ImageCollection("MODIS/061/MOD15A2H") chỉ số diện tích lá và chỉ số bức xạ quang hợp được hấp thụ
+col_lai_fpar = ee.ImageCollection("MODIS/061/MOD15A2H") #chỉ số diện tích lá và chỉ số bức xạ quang hợp được hấp thụ
 col_lst = ee.ImageCollection("MODIS/061/MOD11A2").select(["LST_Day_1km"]) # chỉ số nhiệt độ bề mặt đất vào ban ngày
 col_soil = ee.ImageCollection("NASA_USDA/HSL/SMAP10KM_soil_moisture").select(["ssm"]) # độ ẩm dất bề mặt
 def get_safe_band(collection, band_name, scale, new_name, start_date, end_date, valid_max=None):
