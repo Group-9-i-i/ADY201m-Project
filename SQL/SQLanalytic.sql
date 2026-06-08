@@ -4,7 +4,7 @@ SELECT COUNT(DISTINCT [Crop Name]) AS total_crops
 FROM Data;
 SELECT COUNT(DISTINCT District) AS total_districts
 FROM Data;
----4. Dataset balance theo crop
+--- Dataset balance theo crop
 SELECT 
     [Crop Name],
     COUNT(*) AS samples
@@ -21,7 +21,7 @@ FROM Data;
 SELECT TOP 10 *
 FROM Data
 ORDER BY Yield DESC;
------ năng xuất trung bình theo huyện
+----- Năng xuất trung bình theo huyện
 SELECT 
     District,
     AVG(Yield) AS avg_yield
@@ -34,7 +34,7 @@ SELECT
 FROM Data
 GROUP BY ROUND(Rainfall,0)
 ORDER BY rainfall;
----- ta thấy quan hệ không phải mưa lúc nào tăng thì lượng  mưa tăng thì không có nghĩa là năng xuất cũng tăng 
+---- Ta thấy quan hệ không phải mưa lúc nào tăng thì lượng  mưa tăng thì không có nghĩa là năng xuất cũng tăng 
 ---- Vì ở ngoài đời tưới mưa nhiều quá cũng không tăng năng xuất
 SELECT 
     ROUND([Avg Temp],1) AS avg_temp,
@@ -42,7 +42,7 @@ SELECT
 FROM Data
 GROUP BY ROUND([Avg Temp],1)
 ORDER BY avg_temp;
----- ở đây ta quan sát được nhiệt độ không ảnh hưởng nhiều đến năng xuất nhưng ta thấy từ 29 độ thấy năng xuất tăng khá cao 
+---- Ở đây ta quan sát được nhiệt độ không ảnh hưởng nhiều đến năng xuất nhưng ta thấy từ 29 độ thấy năng xuất tăng khá cao 
 SELECT 
     ROUND([Avg Humidity],1) AS humidity,
     AVG(Yield) AS avg_yield
@@ -63,7 +63,7 @@ SELECT
 FROM data
 GROUP BY ROUND(NDVI_Season_Mean,2)
 ORDER BY ndvi;
---- ta nhận xét Cây phát triển tốt nhất ra nhiều năng xuất khi NDVI ở mức 0.4 đến 0.5
+--- Ta nhận xét Cây phát triển tốt nhất ra nhiều năng xuất khi NDVI ở mức 0.4 đến 0.5
 SELECT 
     ROUND(NDVI_Season_Max,2) AS ndvi_max,
     AVG(Yield) AS avg_yield
