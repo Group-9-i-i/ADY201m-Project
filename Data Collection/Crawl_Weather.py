@@ -79,14 +79,14 @@ for _, row in coords.iterrows():
     lat = row["lat"]
     lon = row["lon"]
 
-    print(f"☁️ Fetching weather for {name}")
+    print(f"Fetching weather for {name}")
     try:
         raw = fetch_nasa(lat, lon)
         daily = nasa_to_df(raw)
         seasonal = aggregate_season(daily, name)
         all_data.append(seasonal)
     except Exception as e:
-        print(f"❌ Failed {name}: {e}")
+        print(f"Failed {name}: {e}")
 
     sleep(1)
 
@@ -99,7 +99,7 @@ for col in final_df.select_dtypes(include=[np.number]).columns:
     if final_df[col].isna().sum() > 0:
         final_df[col] = final_df.groupby('District')[col].transform(lambda x: x.fillna(x.median()))
 
-print("✅ DONE FETCHING")
+print("DONE FETCHING")
 
 def process_weather_data(weather_df):
     print("1. Đang đọc dữ liệu Main...")
@@ -137,6 +137,6 @@ def process_weather_data(weather_df):
 
     output_filename = 'Bangladesh_weather_data_procces.csv'
     weather_df.to_csv(output_filename, index=False, encoding='utf-8-sig')
-    print(f"\n✅ HOÀN TẤT! Đã tạo ra file '{output_filename}' thành công.")
+    print(f"\nHOÀN TẤT! Đã tạo ra file '{output_filename}' thành công.")
 
 process_weather_data(final_df)

@@ -128,11 +128,11 @@ def process_district(lat, lon, name):
         if data:
             collected_samples.append(data)
             if rescued:
-                log_str += "⚠️" # Dấu này nghĩa là điểm gốc lỗi, nhưng đã tìm được điểm thay thế gần đó
+                log_str += "W" # Dấu này nghĩa là điểm gốc lỗi, nhưng đã tìm được điểm thay thế gần đó
             else:
-                log_str += "✅" # Dấu này nghĩa là điểm gốc ngon lành
+                log_str += "OK" # Dấu này nghĩa là điểm gốc ngon lành
         else:
-            log_str += "❌" # Hết cứu
+            log_str += "X" # Hết cứu
 
     # Tổng hợp dữ liệu
     if not collected_samples:
@@ -148,7 +148,7 @@ def process_district(lat, lon, name):
             final_soil[SOIL_LAYERS[k]] = None
             
     final_soil["valid_points"] = len(collected_samples)
-    final_soil["grid_log"] = log_str # Lưu lại log để bạn kiểm tra (VD: ✅⚠️✅❌✅)
+    final_soil["grid_log"] = log_str # Lưu lại log để bạn kiểm tra (VD: OK W OK X OK)
     
     print(f"   [{log_str}] ({len(collected_samples)}/5 điểm)", end=" ", flush=True)
     return final_soil
@@ -159,8 +159,8 @@ def collect_soil_data(district_csv):
     records = []
     total = len(districts)
     
-    print(f"🚀 Bắt đầu chế độ: Hybrid Search (Grid 11km + Jitter 1km)...")
-    print(f"📝 Chú thích: ✅=Gốc OK, ⚠️=Đã cứu hộ (lệch 1km), ❌=Bó tay")
+    print(f"Bắt đầu chế độ: Hybrid Search (Grid 11km + Jitter 1km)...")
+    print(f"Chú thích: OK=Gốc OK, W=Đã cứu hộ (lệch 1km), X=Bó tay")
 
     for idx, row in districts.iterrows():
         name = row.get("District", row.get("district", "Unknown"))
@@ -181,7 +181,7 @@ def collect_soil_data(district_csv):
             empty = {k: None for k in SOIL_LAYERS.values()}
             empty["District"] = name
             empty["valid_points"] = 0
-            empty["grid_log"] = "❌❌❌❌❌"
+            empty["grid_log"] = "XXXXX"
             records.append(empty)
 
     return pd.DataFrame(records)
@@ -232,11 +232,11 @@ def process_soil_data(soil_df):
         soil_df = soil_df[cols]
     
     soil_df.to_csv(output_filename, index=False, encoding='utf-8-sig')
-    print(f"\n✅ HOÀN TẤT! File '{output_filename}' đã được tạo thành công.")
+    print(f"\nHOÀN TẤT! File '{output_filename}' đã được tạo thành công.")
 
 if __name__ == "__main__":
     df = collect_soil_data("bangladesh_districts_coords_data.csv")
-    print("\n🎉 Hoàn tất quá trình lấy dữ liệu!")
+    print("\nHoàn tất quá trình lấy dữ liệu!")
     
     # --- XỬ LÝ LỖI (DATA CLEANING) BÊN CRAWL ---
     print("Đang xử lý dữ liệu lỗi (bên crawl)...")

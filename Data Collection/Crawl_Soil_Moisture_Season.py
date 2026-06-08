@@ -111,7 +111,7 @@ def process_soil_moisture_data(sm_df):
     sm_df = sm_df[final_cols]
     
     sm_df.to_csv(output_filename, index=False, encoding='utf-8-sig')
-    print(f"\n✅ HOÀN TẤT! File '{output_filename}' đã được tạo thành công.")
+    print(f"\nHOÀN TẤT! File '{output_filename}' đã được tạo thành công.")
 
 if __name__ == "__main__":
     batches = [

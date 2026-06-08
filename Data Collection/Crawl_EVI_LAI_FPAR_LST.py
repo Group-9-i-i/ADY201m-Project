@@ -66,7 +66,7 @@ def process_safe_month(month_offset):
     img_evi = get_safe_band(col_evi, 'EVI', 0.0001, 'EVI')
     img_lai = get_safe_band(col_lai_fpar, 'Lai_500m', 0.1, 'LAI')
     
-    # 🔥 FIX QUAN TRỌNG Ở ĐÂY
+    # FIX QUAN TRỌNG Ở ĐÂY
     img_fpar = get_safe_band(
         col_lai_fpar,
         'Fpar_500m',

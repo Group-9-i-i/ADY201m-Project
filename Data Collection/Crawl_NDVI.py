@@ -43,22 +43,22 @@ print("=" * 80)
 
 try:
     ee.Initialize(project=CONFIG['PROJECT_ID'])
-    print("✓ Khởi tạo Earth Engine thành công!")
+    print("[OK] Khởi tạo Earth Engine thành công!")
 except Exception as e:
-    print(f"✗ Lỗi: {e}")
+    print(f"[ERR] Lỗi: {e}")
     sys.exit(1)
 
 print("\n" + "=" * 80)
 print("CHIẾN LƯỢC THU THẬP DỮ LIỆU THỰC")
 print("=" * 80)
-print(f"✓ Cloud cover tối đa: {CONFIG['CLOUD_COVER_MAX']}% (rất cao)")
-print(f"✓ Cửa sổ thời gian: ±{CONFIG['TIME_BUFFER_DAYS']} ngày")
-print(f"✓ Cửa sổ mùa: ±{CONFIG['SEASONAL_WINDOW_DAYS']} ngày (dự phòng)")
-print(f"✓ Sentinel-2: Có")
-print(f"✓ Landsat 8/9: {'Có' if CONFIG['USE_LANDSAT'] else 'Không'}")
-print(f"✓ MODIS: {'Có' if CONFIG['USE_MODIS'] else 'Không'}")
-print(f"✓ Nội suy: {'Có' if CONFIG['INTERPOLATE_MISSING'] else 'KHÔNG'}")
-print("\n⚠ LƯU Ý: Tất cả dữ liệu đều là THỰC từ vệ tinh, không có nội suy")
+print(f"[OK] Cloud cover tối đa: {CONFIG['CLOUD_COVER_MAX']}% (rất cao)")
+print(f"[OK] Cửa sổ thời gian: ±{CONFIG['TIME_BUFFER_DAYS']} ngày")
+print(f"[OK] Cửa sổ mùa: ±{CONFIG['SEASONAL_WINDOW_DAYS']} ngày (dự phòng)")
+print(f"[OK] Sentinel-2: Có")
+print(f"[OK] Landsat 8/9: {'Có' if CONFIG['USE_LANDSAT'] else 'Không'}")
+print(f"[OK] MODIS: {'Có' if CONFIG['USE_MODIS'] else 'Không'}")
+print(f"[OK] Nội suy: {'Có' if CONFIG['INTERPOLATE_MISSING'] else 'KHÔNG'}")
+print("\n[LƯU Ý]: Tất cả dữ liệu đều là THỰC từ vệ tinh, không có nội suy")
 
 # ============================================================================
 # TẢI RANH GIỚI
@@ -73,9 +73,9 @@ try:
         .filter(ee.Filter.eq('ADM0_NAME', 'Bangladesh'))
     
     district_list = bangladesh.aggregate_array('ADM2_NAME').getInfo()
-    print(f"✓ Số huyện: {len(district_list)}")
+    print(f"[OK] Số huyện: {len(district_list)}")
 except Exception as e:
-    print(f"✗ Lỗi: {e}")
+    print(f"[ERR] Lỗi: {e}")
     sys.exit(1)
 
 # ============================================================================
@@ -113,7 +113,7 @@ def calculate_ndvi_modis(image):
     ndvi = image.select('NDVI').multiply(0.0001)  # Scale factor
     return image.addBands(ndvi.rename('NDVI'))
 
-print("✓ Hàm xử lý ảnh đã sẵn sàng")
+print("[OK] Hàm xử lý ảnh đã sẵn sàng")
 
 # ============================================================================
 # HÀM TRÍCH XUẤT VỚI NHIỀU CHIẾN LƯỢC FALLBACK
@@ -473,7 +473,7 @@ for idx, district_name in enumerate(district_list, 1):
         for month in MONTHS:
             result = get_ndvi_aggressive(district_geom, CONFIG['YEAR'], month, district_name)
             
-            status = "✓" if result['ndvi'] is not None else "✗"
+            status = "[OK]" if result['ndvi'] is not None else "[ERR]"
             ndvi_str = f"{result['ndvi']:.4f}" if result['ndvi'] is not None else "NULL"
             
             print(f"  T{month:02d}: {status} {ndvi_str} | {result['method']:25s} | "
@@ -502,7 +502,7 @@ for idx, district_name in enumerate(district_list, 1):
         print(f"  → {progress:.1f}% | ETA: {eta/60:.1f}min")
         
     except Exception as e:
-        print(f"✗ Lỗi: {e}")
+        print(f"[ERR] Lỗi: {e}")
         for month in MONTHS:
             results.append({
                 'District': district_name,
@@ -593,9 +593,9 @@ output_file = f'bangladesh_ndvi_2022_REAL_DATA_ONLY_{timestamp}.csv'
 print("\n" + "=" * 80)
 print("HOÀN THÀNH CRAWL!")
 print("=" * 80)
-print(f"✓ Độ hoàn chỉnh: {completeness:.1f}% (100% dữ liệu thực)")
-print(f"✓ KHÔNG có dữ liệu nội suy")
-print(f"✓ Phù hợp cho nghiên cứu khoa học")
+print(f"[OK] Độ hoàn chỉnh: {completeness:.1f}% (100% dữ liệu thực)")
+print(f"[OK] KHÔNG có dữ liệu nội suy")
+print(f"[OK] Phù hợp cho nghiên cứu khoa học")
 print()
 
 # ============================================================================

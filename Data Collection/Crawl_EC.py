@@ -7,7 +7,7 @@ import os
 # 1. Khởi tạo
 try:
     ee.Initialize(project='gen-lang-client-0272496285')
-    print("✅ Đã kết nối thành công.")
+    print("Đã kết nối thành công.")
 except Exception as e:
     ee.Authenticate()
     ee.Initialize(project='gen-lang-client-0272496285')
@@ -43,7 +43,7 @@ def run_bangladesh_super_split():
     # --- VÒNG LẶP ---
     for month in range(1, 13):
         print(f"\n==============================================")
-        print(f" 📅 ĐANG XỬ LÝ THÁNG {month}/2022")
+        print(f" ĐANG XỬ LÝ THÁNG {month}/2022")
         print(f"==============================================")
         
         start_date = ee.Date.fromYMD(2022, month, 1)
@@ -61,7 +61,7 @@ def run_bangladesh_super_split():
             # Đo thời gian bắt đầu
             t_start = time.time()
             
-            print(f"  ⏳ [Nhóm {part_id}/{NUM_SPLIT}] Đang gửi yêu cầu cho {len(chunk)} huyện... ", end="", flush=True)
+            print(f"  [Nhóm {part_id}/{NUM_SPLIT}] Đang gửi yêu cầu cho {len(chunk)} huyện... ", end="", flush=True)
 
             try:
                 # 1. Chuẩn bị dữ liệu (Geometry)
@@ -115,12 +115,12 @@ def run_bangladesh_super_split():
                          df_part = df_part[export_cols]
                     
                     all_dataframes.append(df_part)
-                    print(f"✅ OK! (Mất {elapsed:.2f}s) - Lấy được {len(df_part)} dòng.")
+                    print(f"OK! (Mất {elapsed:.2f}s) - Lấy được {len(df_part)} dòng.")
                 else:
-                    print(f"⚠️ Rỗng (Mất {elapsed:.2f}s).")
+                    print(f"Rỗng (Mất {elapsed:.2f}s).")
 
             except Exception as e:
-                print(f"\n❌ LỖI tại Nhóm {part_id}: {e}")
+                print(f"\nLỖI tại Nhóm {part_id}: {e}")
                 print("   -> Đang nghỉ 5s rồi thử lại nhóm kế tiếp...")
                 time.sleep(5)
 
@@ -131,7 +131,7 @@ def run_bangladesh_super_split():
     # --- LƯU FILE ---
     print("\n------------------------------------------------")
     if all_dataframes:
-        print("💾 Đang gộp file...")
+        print("Đang gộp file...")
         final_df = pd.concat(all_dataframes, ignore_index=True)
         
         print("Đang xử lý dữ liệu lỗi (bên crawl)...")
@@ -150,11 +150,11 @@ def run_bangladesh_super_split():
         }
         final_df['District'] = final_df['ADM2_NAME'].replace(district_map)
         
-        print(f"🎉 HOÀN TẤT CRAWL VÀ XỬ LÝ LỖI!")
-        print(f"📊 Tổng số dòng: {len(final_df)}")
+        print(f"HOÀN TẤT CRAWL VÀ XỬ LÝ LỖI!")
+        print(f"Tổng số dòng: {len(final_df)}")
         return final_df
     else:
-        print("❌ Không thu thập được dữ liệu nào.")
+        print("Không thu thập được dữ liệu nào.")
         return None
 
 def merge_datasets(df_salinity):
