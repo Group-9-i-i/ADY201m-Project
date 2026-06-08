@@ -52,7 +52,7 @@ axes[2].set_title('Top 12 Crops by Mean Yield')
 axes[2].set_xlabel('Mean Yield')
 
 plt.tight_layout()
-plt.show()
+#plt.show()
 
 print(f'Yield stats:\n{train["Yield"].describe()}')
 
@@ -269,7 +269,7 @@ for ax, col in zip(axes, ['R² (OOF)','MAE (OOF)','RMSE (OOF)','RMSLE (OOF)']):
 
 plt.suptitle('OOF Metrics — Base Models vs Stacking (red)', fontsize=13, fontweight='bold')
 plt.tight_layout()
-plt.show()
+#plt.show()
 
 
 print('Fitting full stacking ensemble on all training data...')
@@ -327,7 +327,7 @@ axes[1].set_xlabel('Predicted'); axes[1].set_ylabel('True')
 
 
 plt.tight_layout()
-plt.show()
+#plt.show()
 
 
 # Extract LGBM importance (most reliable for this ensemble)
@@ -360,7 +360,7 @@ axes[1].set_title(f'Cumulative Importance  (80%: {n80} feats, 95%: {n95} feats)'
 axes[1].legend()
 
 plt.tight_layout()
-plt.show()
+#plt.show()
 
 print(f'\nTop 10 features (LGBM):')
 print(importances.head(10).to_string())
