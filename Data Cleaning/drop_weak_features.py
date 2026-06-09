@@ -11,11 +11,11 @@ def main():
     
     print(f"Original shape: {df.shape}")
     
-    # 30 Features to Keep
+    # Features to Keep (removed Latitude and Longitude)
     features_to_keep = [
         'FPAR', 'Avg_Salinity_Index', 'EVI', 'Rain_Temp_Ratio', 'Rainfall', 
-        'Wind_Mean', 'Temp_Min', 'Wind_Max', 'Temp_Max', 'Longitude', 
-        'District', 'Clay', 'LAI', 'Latitude', 'Nitrogen', 
+        'Wind_Mean', 'Temp_Min', 'Wind_Max', 'Temp_Max', 
+        'District', 'Clay', 'LAI', 'Nitrogen', 
         'Soil_Moisture_mm', 'pH', 'LST_Kelvin', 'Dominant_Soil_Texture', 'AP Ratio', 
         'Temp_Mean', 'Avg Humidity', 'Heat_Stress_Days', 'Silt', 'Growth', 
         'CN_Ratio', 'Crop Name', 'Organic_Carbon', 'Transplant', 'Season'

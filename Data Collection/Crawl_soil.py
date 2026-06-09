@@ -7,11 +7,11 @@ from urllib3.util.retry import Retry
 
 SOIL_LAYERS = {
     "phh2o": "pH", "soc": "Organic_Carbon", "nitrogen": "Nitrogen",
-    "clay": "Clay", "sand": "Sand", "silt": "Silt", "bdod": "Bulk_Density"
+    "clay": "Clay", "sand": "Sand", "silt": "Silt"
 }
 CONVERSION_FACTORS = {
     "phh2o": 10, "soc": 10, "nitrogen": 100, 
-    "clay": 10, "sand": 10, "silt": 10, "bdod": 100
+    "clay": 10, "sand": 10, "silt": 10
 }
 DEPTHS = ["0-5cm", "5-15cm", "15-30cm"]
 BASE_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
@@ -91,7 +91,6 @@ def process_district(lat, lon, name):
         values = [s[k] for s in collected_samples if s.get(k) is not None]
         final_soil[SOIL_LAYERS[k]] = round(sum(values) / len(values), 2) if values else None
             
-    final_soil["valid_points"] = len(collected_samples)
     return final_soil
 
 def crawl_data():
@@ -106,11 +105,11 @@ def crawl_data():
         soil_data = process_district(row["lat"], row["lon"], name)
 
         if soil_data:
-            soil_data.update({"District": name, "Latitude": row["lat"], "Longitude": row["lon"]})
+            soil_data.update({"District": name})
             records.append(soil_data)
         else:
             empty = {k: None for k in SOIL_LAYERS.values()}
-            empty.update({"District": name, "valid_points": 0})
+            empty.update({"District": name})
             records.append(empty)
 
     return pd.DataFrame(records)
@@ -124,12 +123,6 @@ def clean_data(df):
 
 def feature_engineering(df):
     df['CN_Ratio'] = (df['Organic_Carbon'] / (df['Nitrogen'] + 0.001)).round(2)
-    
-    conditions_ph = [(df['pH'] < 5.5), (df['pH'] >= 5.5) & (df['pH'] <= 7.0), (df['pH'] > 7.0)]
-    df['pH_Suitability'] = np.select(conditions_ph, ['Acidic (Chua)', 'Optimal (Tối ưu)', 'Alkaline (Kiềm)'], default='Unknown')
-
-    conditions_bd = [(df['Bulk_Density'] < 1.4), (df['Bulk_Density'] >= 1.4) & (df['Bulk_Density'] <= 1.6), (df['Bulk_Density'] > 1.6)]
-    df['Compaction_Risk'] = np.select(conditions_bd, ['Low', 'Moderate', 'High'], default='Unknown')
 
     def classify_texture(row):
         sand, clay = row['Sand'], row['Clay']
@@ -142,6 +135,9 @@ def feature_engineering(df):
     return df
 
 def merge_and_save(df):
+    if 'Sand' in df.columns:
+        df = df.drop(columns=['Sand'])
+        
     cols = df.columns.tolist()
     if 'District' in cols:
         cols.insert(0, cols.pop(cols.index('District')))

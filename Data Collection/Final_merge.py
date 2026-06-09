@@ -9,7 +9,6 @@ def merge_all_files():
         'Process_bangladesh_ndvi_data.csv',
         'Process_Bangladesh_Salinity_data.csv',
         'Process_Bangladesh_soil_data_Merge.csv',
-        'Process_Bangladesh_Soil_Moisture_data_Merge.csv',
         'Process_Bangladesh_weather_data_Merge.csv'
     ]
     

@@ -18,7 +18,7 @@ def get_season(month):
 def fetch_nasa(lat, lon):
     url = (
         "https://power.larc.nasa.gov/api/temporal/daily/point"
-        "?parameters=PRECTOTCORR,T2M,T2M_MAX,T2M_MIN,WS2M,WS2M_MAX,WS2M_MIN"
+        "?parameters=PRECTOTCORR,T2M,T2M_MAX,T2M_MIN,WS2M,WS2M_MAX"
         "&community=AG"
         f"&latitude={lat}&longitude={lon}"
         f"&start={YEAR}0101&end={YEAR}1231&format=JSON"
@@ -36,7 +36,6 @@ def nasa_to_df(data):
         "Temp_Min": data["T2M_MIN"][d],
         "Wind_Mean": data["WS2M"][d],
         "Wind_Max": data["WS2M_MAX"][d],
-        "Wind_Min": data["WS2M_MIN"][d],
     } for d in data["T2M"]]
     
     df = pd.DataFrame(rows)
@@ -52,8 +51,7 @@ def aggregate_season(df, district):
         Temp_Min=("Temp_Min", "min"),
         Heat_Stress_Days=("Temp_Max", lambda x: (x > 35).sum()),
         Wind_Mean=("Wind_Mean", "mean"),
-        Wind_Max=("Wind_Max", "max"),
-        Wind_Min=("Wind_Min", "min")
+        Wind_Max=("Wind_Max", "max")
     ).reset_index()
     out["District"] = district
     out["Year"] = YEAR
@@ -88,17 +86,7 @@ def clean_data(df):
     return df
 
 def feature_engineering(df):
-    df['Temp_Range'] = (df['Temp_Max'] - df['Temp_Min']).round(2)
-    df['Wind_Range'] = (df['Wind_Max'] - df['Wind_Min']).round(2)
     df['Rain_Temp_Ratio'] = (df['Rainfall'] / (df['Temp_Mean'] + 0.001)).round(2)
-    
-    conditions = [
-        (df['Heat_Stress_Days'] == 0),
-        (df['Heat_Stress_Days'] > 0) & (df['Heat_Stress_Days'] <= 15),
-        (df['Heat_Stress_Days'] > 15)
-    ]
-    df['Extreme_Heat_Risk'] = np.select(conditions, ['Low Risk', 'Moderate Risk', 'High Risk'], default='Unknown')
-    df['Is_Extreme_Heat'] = np.where(df['Temp_Max'] > 38, 1, 0)
     return df
 
 def merge_and_save(df):
