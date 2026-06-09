@@ -1,0 +1,501 @@
+{
+    "all_features": [
+        "FPAR",
+        "Avg_Salinity_Index",
+        "EVI",
+        "Rain_Temp_Ratio",
+        "Rainfall",
+        "Wind_Mean",
+        "Temp_Min",
+        "Wind_Min",
+        "Temp_Max",
+        "Longitude",
+        "District",
+        "Clay",
+        "LAI",
+        "Latitude",
+        "Nitrogen",
+        "grid_log",
+        "pH",
+        "LST_Kelvin",
+        "Dominant_Soil_Texture",
+        "AP Ratio",
+        "Wind_Max",
+        "pH_Suitability",
+        "Heat_Stress_Days",
+        "Silt",
+        "Growth",
+        "CN_Ratio",
+        "Crop Name",
+        "Organic_Carbon",
+        "Transplant",
+        "Temp_Mean",
+        "Temp_Range",
+        "Sand",
+        "Extreme_Heat_Risk",
+        "Bulk_Density",
+        "Harvest",
+        "sm_rootzone",
+        "Wind_Range",
+        "Soil_Moisture_mm",
+        "Rootzone_Surface_Diff",
+        "Production",
+        "Moisture_Ratio",
+        "sm_surface",
+        "Season",
+        "Avg Humidity",
+        "Area",
+        "Is_Extreme_Heat",
+        "valid_points",
+        "Avg Temp",
+        "Min Relative Humidity",
+        "Water_Availability_Cat",
+        "Max Relative Humidity",
+        "Max Temp",
+        "Min Temp",
+        "Year",
+        "Compaction_Risk"
+    ],
+    "feature_stats": [
+        {
+            "Feature": "FPAR",
+            "SHAP_Importance": 0.06281567874742089,
+            "LIME_Importance": 0.067074542091796,
+            "SHAP_Rank": 1.0,
+            "LIME_Rank": 1.0,
+            "Avg_Rank": 1.0
+        },
+        {
+            "Feature": "Avg_Salinity_Index",
+            "SHAP_Importance": 0.022953726796220385,
+            "LIME_Importance": 0.02780700509105001,
+            "SHAP_Rank": 2.0,
+            "LIME_Rank": 2.0,
+            "Avg_Rank": 2.0
+        },
+        {
+            "Feature": "EVI",
+            "SHAP_Importance": 0.01627380583369709,
+            "LIME_Importance": 0.017362485827252236,
+            "SHAP_Rank": 3.0,
+            "LIME_Rank": 4.0,
+            "Avg_Rank": 3.5
+        },
+        {
+            "Feature": "Rain_Temp_Ratio",
+            "SHAP_Importance": 0.010752287019121192,
+            "LIME_Importance": 0.012010181997417529,
+            "SHAP_Rank": 4.0,
+            "LIME_Rank": 5.0,
+            "Avg_Rank": 4.5
+        },
+        {
+            "Feature": "Rainfall",
+            "SHAP_Importance": 0.010359613293224297,
+            "LIME_Importance": 0.011148451034674095,
+            "SHAP_Rank": 5.0,
+            "LIME_Rank": 6.0,
+            "Avg_Rank": 5.5
+        },
+        {
+            "Feature": "Wind_Mean",
+            "SHAP_Importance": 0.0016374264007725378,
+            "LIME_Importance": 0.004703008093380237,
+            "SHAP_Rank": 7.0,
+            "LIME_Rank": 11.0,
+            "Avg_Rank": 9.0
+        },
+        {
+            "Feature": "Temp_Min",
+            "SHAP_Importance": 0.002518667893870712,
+            "LIME_Importance": 0.0029267023274289995,
+            "SHAP_Rank": 6.0,
+            "LIME_Rank": 17.0,
+            "Avg_Rank": 11.5
+        },
+        {
+            "Feature": "Wind_Min",
+            "SHAP_Importance": 0.0014316234876276188,
+            "LIME_Importance": 0.003162032961055076,
+            "SHAP_Rank": 8.0,
+            "LIME_Rank": 16.0,
+            "Avg_Rank": 12.0
+        },
+        {
+            "Feature": "Temp_Max",
+            "SHAP_Importance": 0.0013414981751706367,
+            "LIME_Importance": 0.002713136622000663,
+            "SHAP_Rank": 9.0,
+            "LIME_Rank": 19.0,
+            "Avg_Rank": 14.0
+        },
+        {
+            "Feature": "Longitude",
+            "SHAP_Importance": 0.0013023115728619625,
+            "LIME_Importance": 0.0027922633478663413,
+            "SHAP_Rank": 10.0,
+            "LIME_Rank": 18.0,
+            "Avg_Rank": 14.0
+        },
+        {
+            "Feature": "District",
+            "SHAP_Importance": 0.0004895381363348306,
+            "LIME_Importance": 0.005599032304386616,
+            "SHAP_Rank": 24.0,
+            "LIME_Rank": 9.0,
+            "Avg_Rank": 16.5
+        },
+        {
+            "Feature": "Clay",
+            "SHAP_Importance": 0.0011152941423627901,
+            "LIME_Importance": 0.0021254078268986626,
+            "SHAP_Rank": 12.0,
+            "LIME_Rank": 23.0,
+            "Avg_Rank": 17.5
+        },
+        {
+            "Feature": "LAI",
+            "SHAP_Importance": 0.0009658880769485925,
+            "LIME_Importance": 0.0021850039922994753,
+            "SHAP_Rank": 15.0,
+            "LIME_Rank": 22.0,
+            "Avg_Rank": 18.5
+        },
+        {
+            "Feature": "Latitude",
+            "SHAP_Importance": 0.0010887936976176362,
+            "LIME_Importance": 0.0020894561860602848,
+            "SHAP_Rank": 14.0,
+            "LIME_Rank": 24.0,
+            "Avg_Rank": 19.0
+        },
+        {
+            "Feature": "Nitrogen",
+            "SHAP_Importance": 0.0008511500496602843,
+            "LIME_Importance": 0.0023327901334239953,
+            "SHAP_Rank": 19.0,
+            "LIME_Rank": 20.0,
+            "Avg_Rank": 19.5
+        },
+        {
+            "Feature": "grid_log",
+            "SHAP_Importance": 0.00047017691293217847,
+            "LIME_Importance": 0.003850379253434609,
+            "SHAP_Rank": 26.0,
+            "LIME_Rank": 13.0,
+            "Avg_Rank": 19.5
+        },
+        {
+            "Feature": "pH",
+            "SHAP_Importance": 0.0009498137548286624,
+            "LIME_Importance": 0.0020410929519581855,
+            "SHAP_Rank": 16.0,
+            "LIME_Rank": 26.0,
+            "Avg_Rank": 21.0
+        },
+        {
+            "Feature": "LST_Kelvin",
+            "SHAP_Importance": 0.0011046523946552924,
+            "LIME_Importance": 0.0019319190903267476,
+            "SHAP_Rank": 13.0,
+            "LIME_Rank": 30.0,
+            "Avg_Rank": 21.5
+        },
+        {
+            "Feature": "Dominant_Soil_Texture",
+            "SHAP_Importance": 1.345985792332237e-05,
+            "LIME_Importance": 0.005821803325610366,
+            "SHAP_Rank": 36.0,
+            "LIME_Rank": 8.0,
+            "Avg_Rank": 22.0
+        },
+        {
+            "Feature": "AP Ratio",
+            "SHAP_Importance": 1.0863409306773215e-19,
+            "LIME_Importance": 0.021282041430732087,
+            "SHAP_Rank": 42.0,
+            "LIME_Rank": 3.0,
+            "Avg_Rank": 22.5
+        },
+        {
+            "Feature": "Wind_Max",
+            "SHAP_Importance": 0.0006419494490380249,
+            "LIME_Importance": 0.0020640241622742377,
+            "SHAP_Rank": 22.0,
+            "LIME_Rank": 25.0,
+            "Avg_Rank": 23.5
+        },
+        {
+            "Feature": "pH_Suitability",
+            "SHAP_Importance": 2.1832129142173833e-05,
+            "LIME_Importance": 0.003557921815602291,
+            "SHAP_Rank": 34.0,
+            "LIME_Rank": 14.0,
+            "Avg_Rank": 24.0
+        },
+        {
+            "Feature": "Heat_Stress_Days",
+            "SHAP_Importance": 0.0003632733320214853,
+            "LIME_Importance": 0.0023273170028616343,
+            "SHAP_Rank": 29.0,
+            "LIME_Rank": 21.0,
+            "Avg_Rank": 25.0
+        },
+        {
+            "Feature": "Silt",
+            "SHAP_Importance": 0.000659581377111134,
+            "LIME_Importance": 0.0018655340449226041,
+            "SHAP_Rank": 21.0,
+            "LIME_Rank": 31.0,
+            "Avg_Rank": 26.0
+        },
+        {
+            "Feature": "Growth",
+            "SHAP_Importance": 1.0453789467436956e-19,
+            "LIME_Importance": 0.004715891403363741,
+            "SHAP_Rank": 43.0,
+            "LIME_Rank": 10.0,
+            "Avg_Rank": 26.5
+        },
+        {
+            "Feature": "CN_Ratio",
+            "SHAP_Importance": 0.0012248711337405165,
+            "LIME_Importance": 0.0016936149717702528,
+            "SHAP_Rank": 11.0,
+            "LIME_Rank": 42.0,
+            "Avg_Rank": 26.5
+        },
+        {
+            "Feature": "Crop Name",
+            "SHAP_Importance": 9.699374279008994e-20,
+            "LIME_Importance": 0.0064745519149481175,
+            "SHAP_Rank": 46.0,
+            "LIME_Rank": 7.0,
+            "Avg_Rank": 26.5
+        },
+        {
+            "Feature": "Organic_Carbon",
+            "SHAP_Importance": 0.00048020129235912826,
+            "LIME_Importance": 0.0019375673121967579,
+            "SHAP_Rank": 25.0,
+            "LIME_Rank": 29.0,
+            "Avg_Rank": 27.0
+        },
+        {
+            "Feature": "Transplant",
+            "SHAP_Importance": 1.3276475741572563e-06,
+            "LIME_Importance": 0.0032072981424440404,
+            "SHAP_Rank": 40.0,
+            "LIME_Rank": 15.0,
+            "Avg_Rank": 27.5
+        },
+        {
+            "Feature": "Temp_Mean",
+            "SHAP_Importance": 0.00036592684078985216,
+            "LIME_Importance": 0.0019429610324464546,
+            "SHAP_Rank": 28.0,
+            "LIME_Rank": 28.0,
+            "Avg_Rank": 28.0
+        },
+        {
+            "Feature": "Temp_Range",
+            "SHAP_Importance": 0.0009446996895202634,
+            "LIME_Importance": 0.0016623649322379274,
+            "SHAP_Rank": 17.0,
+            "LIME_Rank": 44.0,
+            "Avg_Rank": 30.5
+        },
+        {
+            "Feature": "Sand",
+            "SHAP_Importance": 0.0003696110332089588,
+            "LIME_Importance": 0.001783289237975143,
+            "SHAP_Rank": 27.0,
+            "LIME_Rank": 35.0,
+            "Avg_Rank": 31.0
+        },
+        {
+            "Feature": "Extreme_Heat_Risk",
+            "SHAP_Importance": 2.7882122882519608e-05,
+            "LIME_Importance": 0.0018615370460659461,
+            "SHAP_Rank": 32.0,
+            "LIME_Rank": 32.0,
+            "Avg_Rank": 32.0
+        },
+        {
+            "Feature": "Bulk_Density",
+            "SHAP_Importance": 0.0005378095174513397,
+            "LIME_Importance": 0.001699540173675875,
+            "SHAP_Rank": 23.0,
+            "LIME_Rank": 41.0,
+            "Avg_Rank": 32.0
+        },
+        {
+            "Feature": "Harvest",
+            "SHAP_Importance": 7.520805538670933e-20,
+            "LIME_Importance": 0.004564288599355229,
+            "SHAP_Rank": 52.0,
+            "LIME_Rank": 12.0,
+            "Avg_Rank": 32.0
+        },
+        {
+            "Feature": "sm_rootzone",
+            "SHAP_Importance": 4.183109652197636e-05,
+            "LIME_Importance": 0.001828132499094181,
+            "SHAP_Rank": 31.0,
+            "LIME_Rank": 34.0,
+            "Avg_Rank": 32.5
+        },
+        {
+            "Feature": "Wind_Range",
+            "SHAP_Importance": 0.0007592216680174777,
+            "LIME_Importance": 0.0016330225260612946,
+            "SHAP_Rank": 20.0,
+            "LIME_Rank": 48.0,
+            "Avg_Rank": 34.0
+        },
+        {
+            "Feature": "Soil_Moisture_mm",
+            "SHAP_Importance": 0.0008842129857916825,
+            "LIME_Importance": 0.0016205839815211344,
+            "SHAP_Rank": 18.0,
+            "LIME_Rank": 50.0,
+            "Avg_Rank": 34.0
+        },
+        {
+            "Feature": "Rootzone_Surface_Diff",
+            "SHAP_Importance": 2.485045482266035e-05,
+            "LIME_Importance": 0.0017718530342010113,
+            "SHAP_Rank": 33.0,
+            "LIME_Rank": 36.0,
+            "Avg_Rank": 34.5
+        },
+        {
+            "Feature": "Production",
+            "SHAP_Importance": 9.774601392637015e-20,
+            "LIME_Importance": 0.001969269670051522,
+            "SHAP_Rank": 45.0,
+            "LIME_Rank": 27.0,
+            "Avg_Rank": 36.0
+        },
+        {
+            "Feature": "Moisture_Ratio",
+            "SHAP_Importance": 4.160869268727401e-06,
+            "LIME_Importance": 0.0017232234719814392,
+            "SHAP_Rank": 39.0,
+            "LIME_Rank": 38.0,
+            "Avg_Rank": 38.5
+        },
+        {
+            "Feature": "sm_surface",
+            "SHAP_Importance": 4.514764948675852e-06,
+            "LIME_Importance": 0.0017064646775871402,
+            "SHAP_Rank": 38.0,
+            "LIME_Rank": 40.0,
+            "Avg_Rank": 39.0
+        },
+        {
+            "Feature": "Season",
+            "SHAP_Importance": 0.00011810675461849059,
+            "LIME_Importance": 0.0013307432112217331,
+            "SHAP_Rank": 30.0,
+            "LIME_Rank": 52.0,
+            "Avg_Rank": 41.0
+        },
+        {
+            "Feature": "Avg Humidity",
+            "SHAP_Importance": 8.311378446034813e-20,
+            "LIME_Importance": 0.0018578388335069138,
+            "SHAP_Rank": 49.0,
+            "LIME_Rank": 33.0,
+            "Avg_Rank": 41.0
+        },
+        {
+            "Feature": "Area",
+            "SHAP_Importance": 9.259234783791977e-20,
+            "LIME_Importance": 0.0017526483839733111,
+            "SHAP_Rank": 47.0,
+            "LIME_Rank": 37.0,
+            "Avg_Rank": 42.0
+        },
+        {
+            "Feature": "Is_Extreme_Heat",
+            "SHAP_Importance": 8.844380733514915e-06,
+            "LIME_Importance": 0.0016399216422027683,
+            "SHAP_Rank": 37.0,
+            "LIME_Rank": 47.0,
+            "Avg_Rank": 42.0
+        },
+        {
+            "Feature": "valid_points",
+            "SHAP_Importance": 1.872618139404476e-05,
+            "LIME_Importance": 0.0,
+            "SHAP_Rank": 35.0,
+            "LIME_Rank": 54.0,
+            "Avg_Rank": 44.5
+        },
+        {
+            "Feature": "Avg Temp",
+            "SHAP_Importance": 9.996550494597245e-20,
+            "LIME_Importance": 0.0016433932060666736,
+            "SHAP_Rank": 44.0,
+            "LIME_Rank": 45.0,
+            "Avg_Rank": 44.5
+        },
+        {
+            "Feature": "Min Relative Humidity",
+            "SHAP_Importance": 7.725787511906473e-20,
+            "LIME_Importance": 0.0017217728418507565,
+            "SHAP_Rank": 50.0,
+            "LIME_Rank": 39.0,
+            "Avg_Rank": 44.5
+        },
+        {
+            "Feature": "Water_Availability_Cat",
+            "SHAP_Importance": 3.3240383169051445e-07,
+            "LIME_Importance": 0.001566716712879987,
+            "SHAP_Rank": 41.0,
+            "LIME_Rank": 51.0,
+            "Avg_Rank": 46.0
+        },
+        {
+            "Feature": "Max Relative Humidity",
+            "SHAP_Importance": 8.923492099324054e-20,
+            "LIME_Importance": 0.0016403088068027843,
+            "SHAP_Rank": 48.0,
+            "LIME_Rank": 46.0,
+            "Avg_Rank": 47.0
+        },
+        {
+            "Feature": "Max Temp",
+            "SHAP_Importance": 7.552966320886994e-20,
+            "LIME_Importance": 0.0016920566159784579,
+            "SHAP_Rank": 51.0,
+            "LIME_Rank": 43.0,
+            "Avg_Rank": 47.0
+        },
+        {
+            "Feature": "Min Temp",
+            "SHAP_Importance": 6.342635648599404e-20,
+            "LIME_Importance": 0.0016320053184134492,
+            "SHAP_Rank": 53.0,
+            "LIME_Rank": 49.0,
+            "Avg_Rank": 51.0
+        },
+        {
+            "Feature": "Year",
+            "SHAP_Importance": 0.0,
+            "LIME_Importance": 0.0,
+            "SHAP_Rank": 54.5,
+            "LIME_Rank": 54.0,
+            "Avg_Rank": 54.25
+        },
+        {
+            "Feature": "Compaction_Risk",
+            "SHAP_Importance": 0.0,
+            "LIME_Importance": 0.0,
+            "SHAP_Rank": 54.5,
+            "LIME_Rank": 54.0,
+            "Avg_Rank": 54.25
+        }
+    ]
+}
