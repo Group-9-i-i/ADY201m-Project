@@ -1,15 +1,16 @@
 import pandas as pd
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def merge_all_files():
-    print("1. Đang đọc 6 file dữ liệu...")
+    print("1. Đang đọc 3 file dữ liệu...")
     
-    # Danh sách 6 file cần gộp
+    # Danh sách 3 file cần gộp
     f_names = [
-        'Process_Bangladesh_EVI_LAI_FPAR_LST_data.csv',
-        'Process_bangladesh_ndvi_data.csv',
-        'Process_Bangladesh_Salinity_data.csv',
-        'Process_Bangladesh_soil_data_Merge.csv',
-        'Process_Bangladesh_weather_data_Merge.csv'
+        os.path.join(SCRIPT_DIR, 'Process_Bangladesh_GEE_Indices_Merge.csv'),
+        os.path.join(SCRIPT_DIR, 'Process_Bangladesh_soil_data_Merge.csv'),
+        os.path.join(SCRIPT_DIR, 'Process_Bangladesh_weather_data_Merge.csv')
     ]
     
     # Nạp toàn bộ dữ liệu vào list các DataFrames
@@ -27,7 +28,7 @@ def merge_all_files():
     # Lấy file đầu tiên làm bảng gốc
     merged_df = dfs[0]
 
-    # Duyệt qua 5 file còn lại để ghép dần vào bảng gốc
+    # Duyệt qua 2 file còn lại để ghép dần vào bảng gốc
     for i in range(1, len(dfs)):
         current_df = dfs[i]
         
@@ -43,7 +44,8 @@ def merge_all_files():
     # =====================================================================
     # BƯỚC 4: XUẤT FILE MỚI
     # =====================================================================
-    output_filename = 'Bangladesh_database_Final_Merged.csv'
+    # Lưu file ra thư mục chứa script
+    output_filename = os.path.join(SCRIPT_DIR, 'Bangladesh_database_Final_Merged.csv')
     
     # (Tùy chọn) Có thể sắp xếp lại vị trí cột cho đẹp, đẩy 4 cột chính lên đầu
     cols = merged_df.columns.tolist()

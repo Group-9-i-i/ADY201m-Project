@@ -20,9 +20,10 @@ CONFIG = {
     'NUM_SPLIT_EC': 12
 }
 
-MAIN_DATA_FILE = 'Bangladesh_main_data.csv'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+MAIN_DATA_FILE = os.path.join(SCRIPT_DIR, 'Bangladesh_main_data.csv')
 
-OUTPUT_FILE_GEE = 'Process_Bangladesh_GEE_Indices_Merge.csv'
+OUTPUT_FILE_GEE = os.path.join(SCRIPT_DIR, 'Process_Bangladesh_GEE_Indices_Merge.csv')
 
 DISTRICT_MAP = {
     'Barisal': 'Barishal', 'Chittagong': 'Chattogram', 'Comilla': 'Cumilla',
@@ -308,6 +309,10 @@ def crawl_ec():
     district_chunks = list(split_list(district_names, CONFIG['NUM_SPLIT_EC']))
 
     for month in range(1, 13):
+        print(f"\n==============================================")
+        print(f" 📅 ĐANG XỬ LÝ EC (Salinity) THÁNG {month}/{CONFIG['YEAR']}")
+        print(f"==============================================")
+        
         start_date = ee.Date.fromYMD(CONFIG['YEAR'], month, 1)
         end_date = start_date.advance(1, 'month')
 
@@ -317,7 +322,10 @@ def crawl_ec():
             .map(mask_s2_clouds_ec) \
             .select(['B2', 'B4'])
 
-        for chunk in district_chunks:
+        for i, chunk in enumerate(district_chunks):
+            part_id = i + 1
+            t_start = time.time()
+            print(f"  ⏳ [Nhóm {part_id}/{CONFIG['NUM_SPLIT_EC']}] Đang gửi yêu cầu cho {len(chunk)} huyện... ", end="", flush=True)
             try:
                 # simplify(maxError=100) làm mượt đường viền địa lý nhằm giảm độ phức tạp khi reduceRegions
                 subset_fc = base_fc.filter(ee.Filter.inList('ADM2_NAME', chunk)).map(lambda f: f.simplify(maxError=100))
@@ -334,10 +342,16 @@ def crawl_ec():
                 export_cols = ['ADM2_NAME', 'ADM1_NAME', 'Month', 'Year', 'Salinity_Index_Raw']
                 data_json = stats_final.select(export_cols).getInfo()
                 
+                elapsed = time.time() - t_start
                 if data_json and 'features' in data_json and len(data_json['features']) > 0:
                     df_part = pd.DataFrame([f['properties'] for f in data_json['features']])[export_cols]
                     all_dataframes.append(df_part)
-            except Exception:
+                    print(f"✅ OK! (Mất {elapsed:.2f}s) - Lấy được {len(df_part)} dòng.")
+                else:
+                    print(f"⚠️ Rỗng (Mất {elapsed:.2f}s).")
+            except Exception as e:
+                print(f"\n❌ LỖI tại Nhóm {part_id}: {e}")
+                print("   -> Đang nghỉ 5s rồi thử lại...")
                 time.sleep(5)
 
     if all_dataframes:
@@ -369,6 +383,7 @@ def fe_ec(df):
 
 def save_all_gee(df_ndvi, df_multi, df_ec):
     if not os.path.exists(MAIN_DATA_FILE):
+        print(f"❌ LỖI: Không tìm thấy file gốc {MAIN_DATA_FILE}. Hủy bỏ quá trình lưu!")
         return
         
     df_main = pd.read_csv(MAIN_DATA_FILE)
